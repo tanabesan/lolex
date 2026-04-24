@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOL.ex — LOLBeans Extension</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+/* ── リセット & 変数 ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --primary:   #BB86FC;
+    --secondary: #03DAC6;
+    --bg:        #080810;
+    --surface:   #10101c;
+    --border:    #1e1e30;
+    --text:      #dcdce8;
+    --muted:     #6b6b8a;
+    --danger:    #cf6679;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* ── 背景グリッド ── */
+body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+        linear-gradient(rgba(187,134,252,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(187,134,252,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+}
+
+/* ── ノイズオーバーレイ ── */
+body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    opacity: 0.35;
+    pointer-events: none; z-index: 0;
+}
+
+/* ── ナビゲーション ── */
+nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 48px;
+    background: rgba(8,8,16,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.5rem; font-weight: 700;
+    color: var(--primary);
+    letter-spacing: 0.08em;
+    text-decoration: none;
+}
+.nav-logo span { color: var(--secondary); }
+
+.nav-links { display: flex; gap: 8px; align-items: center; }
+
+.btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 22px; border-radius: 6px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.95rem; font-weight: 600; letter-spacing: 0.05em;
+    cursor: pointer; text-decoration: none; border: none;
+    transition: all 0.2s; white-space: nowrap;
+}
+.btn-ghost {
+    background: transparent; color: var(--text);
+    border: 1px solid var(--border);
+}
+.btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+.btn-primary {
+    background: var(--primary); color: #0a0a18;
+    box-shadow: 0 0 20px rgba(187,134,252,0.3);
+}
+.btn-primary:hover { filter: brightness(1.1); box-shadow: 0 0 30px rgba(187,134,252,0.5); }
+.btn-secondary {
+    background: var(--secondary); color: #030f0e;
+    box-shadow: 0 0 16px rgba(3,218,198,0.25);
+}
+.btn-secondary:hover { filter: brightness(1.1); }
+
+/* ── ヒーロー ── */
+.hero {
+    position: relative; z-index: 1;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 120px 24px 80px;
+    text-align: center;
+    overflow: hidden;
+}
+
+/* 光のオーブ */
+.hero-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+}
+.orb1 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(187,134,252,0.12) 0%, transparent 70%);
+    top: -100px; left: 50%; transform: translateX(-50%);
+    animation: orbFloat 8s ease-in-out infinite;
+}
+.orb2 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(3,218,198,0.10) 0%, transparent 70%);
+    bottom: 0; right: -100px;
+    animation: orbFloat 10s ease-in-out infinite reverse;
+}
+@keyframes orbFloat {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50%       { transform: translateX(-50%) translateY(-30px); }
+}
+.orb2 { animation: orbFloat2 10s ease-in-out infinite reverse; }
+@keyframes orbFloat2 {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-20px); }
+}
+
+.hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(187,134,252,0.1); border: 1px solid rgba(187,134,252,0.3);
+    border-radius: 999px; padding: 5px 16px; margin-bottom: 28px;
+    font-size: 0.78rem; color: var(--primary); letter-spacing: 0.1em; text-transform: uppercase;
+    animation: fadeUp 0.6s ease both;
+}
+.hero-badge i { font-size: 0.7em; }
+
+h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(3rem, 9vw, 7rem);
+    font-weight: 700; line-height: 0.95; letter-spacing: -0.01em;
+    animation: fadeUp 0.6s 0.1s ease both;
+}
+h1 .line1 { display: block; color: var(--text); }
+h1 .line2 {
+    display: block;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-sub {
+    margin-top: 24px; max-width: 560px;
+    font-size: 1.05rem; color: var(--muted); line-height: 1.7;
+    animation: fadeUp 0.6s 0.2s ease both;
+}
+
+.hero-actions {
+    display: flex; gap: 12px; margin-top: 40px; flex-wrap: wrap; justify-content: center;
+    animation: fadeUp 0.6s 0.3s ease both;
+}
+
+.hero-stats {
+    display: flex; gap: 40px; margin-top: 64px; flex-wrap: wrap; justify-content: center;
+    animation: fadeUp 0.6s 0.4s ease both;
+}
+.stat { text-align: center; }
+.stat-num {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 2.2rem; font-weight: 700; color: var(--primary);
+    display: block;
+}
+.stat-label { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── セクション共通 ── */
+section { position: relative; z-index: 1; padding: 100px 24px; }
+
+.section-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--secondary); margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+}
+.section-label::before, .section-label::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(3,218,198,0.3), transparent);
+}
+h2 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700; text-align: center; margin-bottom: 12px;
+}
+.section-desc {
+    text-align: center; color: var(--muted); max-width: 500px;
+    margin: 0 auto 56px; line-height: 1.7; font-size: 0.95rem;
+}
+
+/* ── フィーチャーカード ── */
+.features-grid {
+    max-width: 960px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;
+}
+.feature-card {
+    background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 28px 24px;
+    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+    position: relative; overflow: hidden;
+}
+.feature-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(187,134,252,0.04) 0%, transparent 60%);
+    pointer-events: none;
+}
+.feature-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(187,134,252,0.12);
+}
+.feature-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(187,134,252,0.1); color: var(--primary);
+    font-size: 1.2rem; margin-bottom: 16px;
+}
+.feature-card h3 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.03em;
+}
+.feature-card p { font-size: 0.87rem; color: var(--muted); line-height: 1.65; }
+
+/* ── 同期セクション ── */
+.sync-section { background: linear-gradient(180deg, var(--bg) 0%, rgba(3,218,198,0.03) 50%, var(--bg) 100%); }
+
+.sync-visual {
+    max-width: 720px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: center;
+}
+.sync-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px;
+}
+.sync-box h4 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 6px;
+}
+.sync-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.82rem;
+}
+.sync-item:last-child { border-bottom: none; }
+.sync-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+.dot-p  { background: var(--primary); }
+.dot-s  { background: var(--secondary); }
+.dot-m  { background: var(--muted); }
+
+.sync-arrow {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: var(--secondary); font-size: 1.4rem;
+}
+.sync-arrow-label { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.06em; text-align: center; }
+
+/* ── インストール手順 ── */
+.steps { max-width: 680px; margin: 0 auto; }
+.step {
+    display: flex; gap: 20px; align-items: flex-start;
+    padding: 20px 0; border-bottom: 1px solid var(--border);
+}
+.step:last-child { border-bottom: none; }
+.step-num {
+    width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1rem;
+    background: rgba(187,134,252,0.12); color: var(--primary);
+    border: 1px solid rgba(187,134,252,0.3);
+}
+.step-body h4 {
+    font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700;
+    margin-bottom: 4px; letter-spacing: 0.03em;
+}
+.step-body p { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+.step-body a { color: var(--secondary); text-decoration: none; }
+.step-body a:hover { text-decoration: underline; }
+.step-body code {
+    background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+    border-radius: 3px; padding: 1px 6px; font-size: 0.82em; color: var(--primary);
+}
+
+/* ── CTA ── */
+.cta-section { text-align: center; }
+.cta-box {
+    max-width: 580px; margin: 0 auto;
+    background: var(--surface); border: 1px solid rgba(187,134,252,0.25);
+    border-radius: 16px; padding: 56px 40px;
+    box-shadow: 0 0 60px rgba(187,134,252,0.08);
+    position: relative; overflow: hidden;
+}
+.cta-box::before {
+    content: ''; position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(187,134,252,0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+.cta-box h2 { margin-bottom: 12px; }
+.cta-box p  { color: var(--muted); font-size: 0.9rem; margin-bottom: 32px; }
+.cta-box .btn { font-size: 1.05rem; padding: 12px 36px; }
+
+/* ── フッター ── */
+footer {
+    position: relative; z-index: 1;
+    border-top: 1px solid var(--border); padding: 32px 48px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+    font-size: 0.82rem; color: var(--muted);
+}
+footer a { color: var(--muted); text-decoration: none; }
+footer a:hover { color: var(--primary); }
+.footer-logo {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.1rem; font-weight: 700; color: var(--primary);
+}
+.footer-logo span { color: var(--secondary); }
+
+/* ── レスポンシブ ── */
+@media (max-width: 640px) {
+    nav { padding: 14px 20px; }
+    .nav-links .btn-ghost { display: none; }
+    .sync-visual { grid-template-columns: 1fr; }
+    .sync-arrow { flex-direction: row; transform: rotate(90deg); }
+    footer { flex-direction: column; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── ナビ ── -->
+<nav>
+    <a class="nav-logo" href="index.html">LOL<span>.ex</span></a>
+    <div class="nav-links">
+        <a class="btn btn-ghost" href="#features">機能</a>
+        <a class="btn btn-ghost" href="#install">インストール</a>
+        <a class="btn btn-ghost" href="auth.html">ログイン</a>
+        <a class="btn btn-primary" href="auth.html?mode=register">
+            <i class="fas fa-user-plus"></i> 登録
+        </a>
+    </div>
+</nav>
+
+<!-- ── ヒーロー ── -->
+<section class="hero">
+    <div class="hero-orb orb1"></div>
+    <div class="hero-orb orb2"></div>
+
+    <div class="hero-badge"><i class="fas fa-puzzle-piece"></i> LOLBeans 専用拡張機能</div>
+
+    <h1>
+        <span class="line1">PLAY SMARTER</span>
+        <span class="line2">LOL.ex</span>
+    </h1>
+
+    <p class="hero-sub">
+        LOLBeans.io のゲーム体験を拡張する Tampermonkey スクリプト。<br>
+        Air Move 自動切り替え、YouTube BGM、カスタム背景、そしてクラウド設定同期。
+    </p>
+
+    <div class="hero-actions">
+        <a class="btn btn-primary" href="auth.html?mode=register">
+            <i class="fas fa-user-plus"></i> 無料で始める
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/" target="_blank" rel="noopener">
+            <i class="fab fa-github"></i> スクリプトを入手
+        </a>
+        <a class="btn btn-ghost" href="https://discord.gg/Cpu8vFDmH3" target="_blank" rel="noopener">
+            <i class="fab fa-discord"></i> Discord
+        </a>
+    </div>
+
+    <div class="hero-stats">
+        <div class="stat"><span class="stat-num">26</span><span class="stat-label">対応コース</span></div>
+        <div class="stat"><span class="stat-num">v0.81</span><span class="stat-label">最新バージョン</span></div>
+        <div class="stat"><span class="stat-num">∞</span><span class="stat-label">カスタマイズ</span></div>
+    </div>
+</section>
+
+<!-- ── フィーチャー ── -->
+<section id="features">
+    <div class="section-label">Features</div>
+    <h2>拡張機能のすべて</h2>
+    <p class="section-desc">
+        LOL.ex はゲームプレイを快適にする多彩な機能を搭載しています。
+    </p>
+
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-exchange-alt"></i></div>
+            <h3>Air Move 自動切り替え</h3>
+            <p>コースごとに Air Move ON/OFF を自動設定。マップ検知で即座に切り替わります。</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon" style="background:rgba(3,218,198,0.1);color:var(--secondary)"><i class="fab fa-youtube"></i></div>
+            <h3>YouTube BGM プレイヤー</h3>
+            <p>ゲーム画面上に常駐するミニプレイヤー。プレイリスト・ループ・シャッフル対応。</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-paint-brush"></i></div>
+            <h3>ビジュアルカスタマイズ</h3>
+            <p>背景画像・UIカラー（メイン・サブ）を自由に変更。設定はブラウザに保存されます。</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon" style="background:rgba(3,218,198,0.1);color:var(--secondary)"><i class="fas fa-cloud-upload-alt"></i></div>
+            <h3>クラウド設定同期</h3>
+            <p>アカウントを作成して設定を保存。複数デバイス・再インストール後も設定を即復元。</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-map-signs"></i></div>
+            <h3>26コース対応</h3>
+            <p>全コースの Air Move 設定を個別管理。Beacon Bay から UFO Attack まで完全対応。</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon" style="background:rgba(3,218,198,0.1);color:var(--secondary)"><i class="fas fa-globe"></i></div>
+            <h3>日本語 / English</h3>
+            <p>設定UIを日本語・英語で切り替え可能。お好みの言語でご利用ください。</p>
+        </div>
+    </div>
+</section>
+
+<!-- ── 同期 ── -->
+<section class="sync-section">
+    <div class="section-label">Cloud Sync</div>
+    <h2>設定をクラウドに保存</h2>
+    <p class="section-desc">
+        アカウントを作れば、どのデバイスでも同じ設定でプレイできます。
+    </p>
+
+    <div class="sync-visual">
+        <div class="sync-box">
+            <h4><i class="fas fa-laptop"></i> ブラウザ</h4>
+            <div class="sync-item"><span class="sync-dot dot-p"></span>UIカラー設定</div>
+            <div class="sync-item"><span class="sync-dot dot-s"></span>Air Move 設定</div>
+            <div class="sync-item"><span class="sync-dot dot-p"></span>背景URLリスト</div>
+            <div class="sync-item"><span class="sync-dot dot-s"></span>YouTube設定</div>
+            <div class="sync-item"><span class="sync-dot dot-m"></span>ホットキー設定</div>
+        </div>
+
+        <div class="sync-arrow">
+            <i class="fas fa-arrows-alt-h"></i>
+            <span class="sync-arrow-label">同期</span>
+        </div>
+
+        <div class="sync-box">
+            <h4><i class="fas fa-cloud"></i> Firebase</h4>
+            <div class="sync-item"><span class="sync-dot dot-p"></span>暗号化保存</div>
+            <div class="sync-item"><span class="sync-dot dot-s"></span>リアルタイム</div>
+            <div class="sync-item"><span class="sync-dot dot-p"></span>無料プラン対応</div>
+            <div class="sync-item"><span class="sync-dot dot-s"></span>複数デバイス</div>
+            <div class="sync-item"><span class="sync-dot dot-m"></span>バックアップ</div>
+        </div>
+    </div>
+</section>
+
+<!-- ── インストール ── -->
+<section id="install">
+    <div class="section-label">Get Started</div>
+    <h2>インストール手順</h2>
+    <p class="section-desc">3ステップで導入完了。</p>
+
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <h4>Tampermonkey をインストール</h4>
+                <p>Chrome / Edge / Firefox に <a href="https://www.tampermonkey.net/" target="_blank">Tampermonkey</a> 拡張機能を追加してください。</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+                <h4>LOL.ex スクリプトをインストール</h4>
+                <p>下のボタンからスクリプトをインストール。または <code>@updateURL</code> を直接追加できます。</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+                <h4>アカウントを作成して設定を同期</h4>
+                <p>このサイトでアカウントを作成し、ダッシュボードから設定をクラウドへアップロードしてください。</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="cta-section">
+    <div class="cta-box">
+        <h2>今すぐ始めよう</h2>
+        <p>無料アカウントで設定をクラウドに保存し、どこでも同じ体験を。</p>
+        <a class="btn btn-secondary" href="auth.html?mode=register">
+            <i class="fas fa-user-plus"></i> 無料アカウントを作成
+        </a>
+    </div>
+</section>
+
+<!-- ── フッター ── -->
+<footer>
+    <div class="footer-logo">LOL<span>.ex</span></div>
+    <div>LOL.ex v0.81 — made by ユウキ / Yuki</div>
+    <div>
+        <a href="https://discord.gg/Cpu8vFDmH3" target="_blank"><i class="fab fa-discord"></i> Discord</a>
+        &nbsp;·&nbsp;
+        <a href="https://github.com/" target="_blank"><i class="fab fa-github"></i> GitHub</a>
+    </div>
+</footer>
+
+</body>
+</html>
