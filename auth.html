@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOL.ex — ログイン / 登録</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --primary:   #BB86FC;
+    --secondary: #03DAC6;
+    --bg:        #080810;
+    --surface:   #10101c;
+    --border:    #1e1e30;
+    --text:      #dcdce8;
+    --muted:     #6b6b8a;
+    --danger:    #cf6679;
+    --input-bg:  #0c0c1a;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px;
+    overflow: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+        linear-gradient(rgba(187,134,252,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(187,134,252,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+}
+
+/* オーブ */
+.orb {
+    position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none;
+}
+.orb1 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(187,134,252,0.10) 0%, transparent 70%);
+    top: -150px; right: -100px;
+}
+.orb2 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(3,218,198,0.08) 0%, transparent 70%);
+    bottom: -100px; left: -100px;
+}
+
+/* ロゴ */
+.site-logo {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.6rem; font-weight: 700; letter-spacing: 0.08em;
+    color: var(--primary); text-decoration: none;
+    display: block; text-align: center; margin-bottom: 32px;
+}
+.site-logo span { color: var(--secondary); }
+
+/* カード */
+.card {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 420px;
+    background: var(--surface);
+    border: 1px solid var(--border); border-radius: 14px;
+    padding: 36px 32px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(187,134,252,0.05);
+    animation: slideUp 0.4s ease;
+}
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* タブ */
+.tabs {
+    display: flex; gap: 0; margin-bottom: 28px;
+    background: rgba(0,0,0,0.25); border-radius: 8px; padding: 3px;
+}
+.tab-btn {
+    flex: 1; padding: 9px; border: none; border-radius: 6px;
+    background: transparent; color: var(--muted);
+    font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 600;
+    letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s;
+}
+.tab-btn.active {
+    background: rgba(187,134,252,0.12);
+    color: var(--primary);
+    box-shadow: inset 0 0 0 1px rgba(187,134,252,0.25);
+}
+
+/* フォーム */
+.form-group { margin-bottom: 16px; }
+label {
+    display: block; font-size: 0.78rem; color: var(--muted);
+    letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px;
+}
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: 100%; padding: 11px 14px;
+    background: var(--input-bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 7px;
+    font-family: 'Noto Sans JP', sans-serif; font-size: 0.93rem;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(187,134,252,0.12);
+}
+input.error {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px rgba(207,102,121,0.12);
+}
+
+/* メッセージ */
+.msg {
+    padding: 10px 14px; border-radius: 6px; font-size: 0.84rem;
+    margin-bottom: 16px; display: none; align-items: center; gap: 8px;
+}
+.msg.error   { background: rgba(207,102,121,0.12); border: 1px solid rgba(207,102,121,0.3); color: #ff8fa3; display: flex; }
+.msg.success { background: rgba(3,218,198,0.12); border: 1px solid rgba(3,218,198,0.3); color: var(--secondary); display: flex; }
+.msg.hidden  { display: none !important; }
+
+/* ボタン */
+.btn-submit {
+    width: 100%; padding: 12px;
+    background: var(--primary); color: #0a0a18;
+    border: none; border-radius: 8px; cursor: pointer;
+    font-family: 'Rajdhani', sans-serif; font-size: 1.05rem; font-weight: 700;
+    letter-spacing: 0.05em;
+    transition: filter 0.2s, box-shadow 0.2s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 6px;
+    box-shadow: 0 0 20px rgba(187,134,252,0.25);
+}
+.btn-submit:hover  { filter: brightness(1.1); box-shadow: 0 0 32px rgba(187,134,252,0.4); }
+.btn-submit:active { transform: scale(0.98); }
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; filter: none; }
+
+.spinner {
+    width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #0a0a18; border-radius: 50%;
+    animation: spin 0.7s linear infinite; display: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 20px 0; color: var(--muted); font-size: 0.75rem;
+}
+.divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.back-link {
+    display: block; text-align: center; margin-top: 20px;
+    font-size: 0.82rem; color: var(--muted); text-decoration: none;
+    transition: color 0.2s;
+}
+.back-link:hover { color: var(--primary); }
+.back-link i { margin-right: 4px; }
+
+/* パスワード強度バー */
+.pw-strength {
+    height: 3px; border-radius: 2px; margin-top: 6px;
+    background: var(--border); overflow: hidden; transition: all 0.3s;
+}
+.pw-strength-bar {
+    height: 100%; border-radius: 2px; width: 0; transition: width 0.3s, background 0.3s;
+}
+
+/* ヒント */
+.hint { font-size: 0.75rem; color: var(--muted); margin-top: 5px; }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<a class="site-logo" href="index.html">LOL<span>.ex</span></a>
+
+<div class="card">
+    <!-- タブ -->
+    <div class="tabs">
+        <button class="tab-btn" id="tab-login"    onclick="switchTab('login')">ログイン</button>
+        <button class="tab-btn" id="tab-register" onclick="switchTab('register')">新規登録</button>
+    </div>
+
+    <!-- エラー / 成功メッセージ -->
+    <div class="msg hidden" id="msg-box">
+        <i class="fas fa-exclamation-circle" id="msg-icon"></i>
+        <span id="msg-text"></span>
+    </div>
+
+    <!-- ── ログインフォーム ── -->
+    <form id="form-login" novalidate>
+        <div class="form-group">
+            <label for="login-email">メールアドレス</label>
+            <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+            <label for="login-password">パスワード</label>
+            <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn-submit" type="submit" id="btn-login">
+            <span class="spinner" id="spinner-login"></span>
+            <i class="fas fa-sign-in-alt" id="icon-login"></i>
+            <span>ログイン</span>
+        </button>
+    </form>
+
+    <!-- ── 登録フォーム ── -->
+    <form id="form-register" novalidate style="display:none">
+        <div class="form-group">
+            <label for="reg-name">ユーザー名</label>
+            <input type="text" id="reg-name" placeholder="Yuki" autocomplete="username">
+        </div>
+        <div class="form-group">
+            <label for="reg-email">メールアドレス</label>
+            <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+            <label for="reg-password">パスワード</label>
+            <input type="password" id="reg-password" placeholder="8文字以上" autocomplete="new-password">
+            <div class="pw-strength"><div class="pw-strength-bar" id="pw-bar"></div></div>
+            <div class="hint" id="pw-hint">パスワードを入力してください</div>
+        </div>
+        <button class="btn-submit" type="submit" id="btn-register">
+            <span class="spinner" id="spinner-register"></span>
+            <i class="fas fa-user-plus" id="icon-register"></i>
+            <span>アカウントを作成</span>
+        </button>
+    </form>
+
+    <a class="back-link" href="index.html"><i class="fas fa-arrow-left"></i> トップに戻る</a>
+</div>
+
+<script type="module">
+import { auth }     from "./firebase-config.js";
+import { login, register, watchAuth } from "./auth.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+// ログイン済みならダッシュボードへ
+watchAuth(user => {
+    if (user) location.href = 'dashboard.html';
+});
+
+// URLパラメータでタブを初期化
+const params = new URLSearchParams(location.search);
+if (params.get('mode') === 'register') switchTab('register');
+else switchTab('login');
+
+// ── タブ切り替え ──
+window.switchTab = function(tab) {
+    document.getElementById('form-login').style.display    = tab === 'login'    ? '' : 'none';
+    document.getElementById('form-register').style.display = tab === 'register' ? '' : 'none';
+    document.getElementById('tab-login').classList.toggle('active',    tab === 'login');
+    document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+    clearMsg();
+};
+
+// ── メッセージ ──
+function showMsg(text, type = 'error') {
+    const box  = document.getElementById('msg-box');
+    const txt  = document.getElementById('msg-text');
+    const icon = document.getElementById('msg-icon');
+    box.className  = `msg ${type}`;
+    txt.textContent = text;
+    icon.className = type === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
+}
+function clearMsg() {
+    document.getElementById('msg-box').className = 'msg hidden';
+}
+
+// ── ローディング状態 ──
+function setLoading(formId, loading) {
+    const suffix  = formId === 'form-login' ? 'login' : 'register';
+    const btn     = document.getElementById(`btn-${suffix}`);
+    const spinner = document.getElementById(`spinner-${suffix}`);
+    const icon    = document.getElementById(`icon-${suffix}`);
+    btn.disabled            = loading;
+    spinner.style.display   = loading ? 'block' : 'none';
+    icon.style.display      = loading ? 'none'  : '';
+}
+
+// ── パスワード強度 ──
+document.getElementById('reg-password').addEventListener('input', e => {
+    const v   = e.target.value;
+    const bar = document.getElementById('pw-bar');
+    const hint = document.getElementById('pw-hint');
+    let score = 0;
+    if (v.length >= 8)              score++;
+    if (/[A-Z]/.test(v))           score++;
+    if (/[0-9]/.test(v))           score++;
+    if (/[^A-Za-z0-9]/.test(v))    score++;
+    const colors = ['#cf6679', '#e8a04a', '#b8d04a', '#03DAC6'];
+    const labels = ['弱い', 'まあまあ', '強い', 'とても強い'];
+    bar.style.width      = v.length === 0 ? '0' : `${(score / 4) * 100}%`;
+    bar.style.background = colors[score - 1] || '#cf6679';
+    hint.textContent     = v.length === 0 ? 'パスワードを入力してください' : labels[score - 1] || '弱い';
+});
+
+// ── Firebase エラー日本語訳 ──
+const FB_ERRORS = {
+    'auth/user-not-found':      'このメールアドレスは登録されていません。',
+    'auth/wrong-password':      'パスワードが正しくありません。',
+    'auth/invalid-email':       '正しいメールアドレスを入力してください。',
+    'auth/email-already-in-use':'このメールアドレスはすでに使用されています。',
+    'auth/weak-password':       'パスワードは6文字以上にしてください。',
+    'auth/too-many-requests':   'ログイン試行が多すぎます。しばらく待ってください。',
+    'auth/invalid-credential':  'メールアドレスまたはパスワードが正しくありません。',
+    'auth/network-request-failed': 'ネットワークエラーが発生しました。',
+};
+function fbErr(code) {
+    return FB_ERRORS[code] || `エラーが発生しました (${code})`;
+}
+
+// ── ログイン ──
+document.getElementById('form-login').addEventListener('submit', async e => {
+    e.preventDefault();
+    clearMsg();
+    const email = document.getElementById('login-email').value.trim();
+    const pass  = document.getElementById('login-password').value;
+    if (!email || !pass) { showMsg('メールアドレスとパスワードを入力してください。'); return; }
+    setLoading('form-login', true);
+    try {
+        await login(email, pass);
+        showMsg('ログイン成功！ダッシュボードへ移動します…', 'success');
+        setTimeout(() => { location.href = 'dashboard.html'; }, 900);
+    } catch (err) {
+        showMsg(fbErr(err.code));
+        setLoading('form-login', false);
+    }
+});
+
+// ── 新規登録 ──
+document.getElementById('form-register').addEventListener('submit', async e => {
+    e.preventDefault();
+    clearMsg();
+    const name  = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const pass  = document.getElementById('reg-password').value;
+    if (!name)         { showMsg('ユーザー名を入力してください。');         return; }
+    if (!email)        { showMsg('メールアドレスを入力してください。');      return; }
+    if (pass.length < 6) { showMsg('パスワードは6文字以上にしてください。'); return; }
+    setLoading('form-register', true);
+    try {
+        await register(email, pass, name);
+        showMsg('登録完了！ダッシュボードへ移動します…', 'success');
+        setTimeout(() => { location.href = 'dashboard.html'; }, 900);
+    } catch (err) {
+        showMsg(fbErr(err.code));
+        setLoading('form-register', false);
+    }
+});
+</script>
+</body>
+</html>
