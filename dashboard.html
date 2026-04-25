@@ -9,7 +9,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 :root {
     --primary:   #BB86FC;
     --secondary: #03DAC6;
@@ -19,371 +18,150 @@
     --text:      #dcdce8;
     --muted:     #6b6b8a;
     --danger:    #cf6679;
-    --input-bg:  #0c0c1a;
 }
-
-body {
-    background: var(--bg); color: var(--text);
-    font-family: 'Noto Sans JP', sans-serif;
-    min-height: 100vh; display: flex; flex-direction: column;
-}
-body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background-image:
-        linear-gradient(rgba(187,134,252,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(187,134,252,0.04) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none; z-index: 0;
-}
-
-/* ── ナビ ── */
-nav {
-    position: sticky; top: 0; z-index: 100;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 40px;
-    background: rgba(8,8,16,0.92); backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-}
-.nav-logo {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 1.4rem; font-weight: 700; color: var(--primary);
-    letter-spacing: 0.08em; text-decoration: none;
-}
+body { background: var(--bg); color: var(--text); font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(187,134,252,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(187,134,252,0.04) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+nav { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 14px 40px; background: rgba(8,8,16,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.nav-logo { font-family: 'Rajdhani', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--primary); letter-spacing: 0.08em; text-decoration: none; }
 .nav-logo span { color: var(--secondary); }
 .nav-right { display: flex; align-items: center; gap: 12px; }
-.user-chip {
-    display: flex; align-items: center; gap: 8px;
-    background: rgba(187,134,252,0.08); border: 1px solid rgba(187,134,252,0.2);
-    border-radius: 999px; padding: 5px 14px;
-    font-size: 0.84rem; color: var(--primary);
-}
-.user-chip i { font-size: 0.75em; }
-.btn-logout {
-    background: transparent; color: var(--muted); border: 1px solid var(--border);
-    border-radius: 6px; padding: 7px 14px; cursor: pointer;
-    font-family: 'Noto Sans JP', sans-serif; font-size: 0.82rem;
-    display: flex; align-items: center; gap: 6px;
-    transition: all 0.2s;
-}
+.user-chip { display: flex; align-items: center; gap: 8px; background: rgba(187,134,252,0.08); border: 1px solid rgba(187,134,252,0.2); border-radius: 999px; padding: 5px 14px; font-size: 0.84rem; color: var(--primary); }
+.btn-logout { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 7px 14px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; font-size: 0.82rem; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
 .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
-
-/* ── メインコンテンツ ── */
-main {
-    position: relative; z-index: 1;
-    flex: 1; padding: 40px 24px;
-    max-width: 900px; margin: 0 auto; width: 100%;
-}
-
-.page-title {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 1.8rem; font-weight: 700; margin-bottom: 4px;
-}
+main { position: relative; z-index: 1; flex: 1; padding: 40px 24px; max-width: 900px; margin: 0 auto; width: 100%; }
+.page-title { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 700; margin-bottom: 4px; }
 .page-sub { color: var(--muted); font-size: 0.88rem; margin-bottom: 36px; }
-
-/* ── グリッド ── */
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-}
+.dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 640px) { .dashboard-grid { grid-template-columns: 1fr; } }
-
-/* ── カード ── */
-.card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 24px;
-    transition: border-color 0.25s;
-}
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: border-color 0.25s; }
 .card:hover { border-color: rgba(187,134,252,0.3); }
 .card-full { grid-column: 1 / -1; }
-
-.card-header {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
-}
-.card-icon {
-    width: 38px; height: 38px; border-radius: 9px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1rem;
-}
+.card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.card-icon { width: 38px; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
 .card-icon.purple { background: rgba(187,134,252,0.12); color: var(--primary); }
 .card-icon.cyan   { background: rgba(3,218,198,0.12);   color: var(--secondary); }
 .card-icon.red    { background: rgba(207,102,121,0.12); color: var(--danger); }
-
-.card-title {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 1rem; font-weight: 700; letter-spacing: 0.05em;
-}
+.card-title { font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: 0.05em; }
 .card-desc { font-size: 0.80rem; color: var(--muted); margin-top: 1px; }
-
-/* ── 同期ボタン ── */
-.sync-btn {
-    width: 100%; padding: 12px;
-    border: none; border-radius: 8px; cursor: pointer;
-    font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 700;
-    letter-spacing: 0.05em;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    transition: all 0.2s; margin-bottom: 10px;
-}
+.sync-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; margin-bottom: 10px; }
 .sync-btn:last-child { margin-bottom: 0; }
-.sync-btn.upload {
-    background: var(--primary); color: #0a0a18;
-    box-shadow: 0 0 16px rgba(187,134,252,0.2);
-}
-.sync-btn.upload:hover  { filter: brightness(1.1); box-shadow: 0 0 24px rgba(187,134,252,0.4); }
-.sync-btn.download {
-    background: rgba(3,218,198,0.12); color: var(--secondary);
-    border: 1px solid rgba(3,218,198,0.3);
-}
+.sync-btn.upload { background: var(--primary); color: #0a0a18; box-shadow: 0 0 16px rgba(187,134,252,0.2); }
+.sync-btn.upload:hover { filter: brightness(1.1); }
+.sync-btn.download { background: rgba(3,218,198,0.12); color: var(--secondary); border: 1px solid rgba(3,218,198,0.3); }
 .sync-btn.download:hover { background: rgba(3,218,198,0.2); }
 .sync-btn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
-
-.spinner-sm {
-    width: 14px; height: 14px; border: 2px solid rgba(0,0,0,0.2);
-    border-top-color: currentColor; border-radius: 50%;
-    animation: spin 0.7s linear infinite; display: none;
-}
+.spinner-sm { width: 14px; height: 14px; border: 2px solid rgba(0,0,0,0.2); border-top-color: currentColor; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── ステータス ── */
-.status-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.83rem;
-}
+.status-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.83rem; }
 .status-row:last-child { border-bottom: none; }
 .status-key { color: var(--muted); }
 .status-val { color: var(--text); font-weight: 500; }
-.badge {
-    display: inline-block; padding: 2px 8px; border-radius: 4px;
-    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em;
-}
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; }
 .badge-p { background: rgba(187,134,252,0.15); color: var(--primary); }
-.badge-s { background: rgba(3,218,198,0.15); color: var(--secondary); }
-.badge-m { background: rgba(107,107,138,0.2); color: var(--muted); }
-
-/* ── ログ ── */
-.log-area {
-    background: rgba(0,0,0,0.3); border: 1px solid var(--border);
-    border-radius: 6px; padding: 12px; font-size: 0.79rem; color: var(--muted);
-    max-height: 120px; overflow-y: auto; font-family: 'Courier New', monospace;
-    line-height: 1.6;
-}
-.log-area .log-ok  { color: var(--secondary); }
-.log-area .log-err { color: var(--danger); }
-.log-area .log-ts  { color: rgba(255,255,255,0.25); margin-right: 6px; }
-
-/* ── 設定プレビュー ── */
-.setting-preview {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;
-}
-.preview-item {
-    background: rgba(0,0,0,0.25); border: 1px solid var(--border);
-    border-radius: 6px; padding: 9px 11px;
-}
-.preview-key { font-size: 0.72rem; color: var(--muted); margin-bottom: 3px; letter-spacing: 0.04em; }
-.preview-val {
-    font-size: 0.82rem; color: var(--text); font-weight: 500;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.color-swatch {
-    display: inline-block; width: 12px; height: 12px; border-radius: 2px;
-    margin-right: 5px; vertical-align: middle; border: 1px solid rgba(255,255,255,0.15);
-}
-
-/* ── 危険ゾーン ── */
-.danger-btn {
-    width: 100%; padding: 10px;
-    background: rgba(207,102,121,0.1); color: var(--danger);
-    border: 1px solid rgba(207,102,121,0.25); border-radius: 7px;
-    font-family: 'Rajdhani', sans-serif; font-size: 0.9rem; font-weight: 700;
-    letter-spacing: 0.05em; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 7px;
-    transition: all 0.2s;
-}
-.danger-btn:hover { background: rgba(207,102,121,0.2); border-color: var(--danger); }
-
-/* ── Toast ── */
-#toast {
-    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; padding: 12px 22px; font-size: 0.86rem;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 9999;
-    display: flex; align-items: center; gap: 10px;
-    opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none;
-}
+.log-area { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 0.79rem; color: var(--muted); max-height: 120px; overflow-y: auto; font-family: 'Courier New', monospace; line-height: 1.6; }
+.log-ok  { color: var(--secondary); }
+.log-err { color: var(--danger); }
+.log-ts  { color: rgba(255,255,255,0.25); margin-right: 6px; }
+.setting-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.preview-item { background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 9px 11px; }
+.preview-key { font-size: 0.72rem; color: var(--muted); margin-bottom: 3px; }
+.preview-val { font-size: 0.82rem; color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.color-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 5px; vertical-align: middle; border: 1px solid rgba(255,255,255,0.15); }
+#toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 22px; font-size: 0.86rem; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 9999; opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 #toast.ok  { border-color: rgba(3,218,198,0.4); color: var(--secondary); }
 #toast.err { border-color: rgba(207,102,121,0.4); color: var(--danger); }
-
-/* ── ローディングオーバーレイ ── */
-#page-loading {
-    position: fixed; inset: 0;
-    background: var(--bg); z-index: 9000;
-    display: flex; align-items: center; justify-content: center;
-    flex-direction: column; gap: 16px;
-}
+#page-loading { position: fixed; inset: 0; background: var(--bg); z-index: 9000; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
 #page-loading.hidden { display: none; }
-.loader-logo {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 2rem; font-weight: 700; color: var(--primary);
-}
+.loader-logo { font-family: 'Rajdhani', sans-serif; font-size: 2rem; font-weight: 700; color: var(--primary); }
 .loader-logo span { color: var(--secondary); }
-.loader-ring {
-    width: 36px; height: 36px; border: 3px solid rgba(187,134,252,0.2);
-    border-top-color: var(--primary); border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
+.loader-ring { width: 36px; height: 36px; border: 3px solid rgba(187,134,252,0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
 </style>
 </head>
 <body>
 
-<!-- ローディング -->
 <div id="page-loading">
     <div class="loader-logo">LOL<span>.ex</span></div>
     <div class="loader-ring"></div>
 </div>
 
-<!-- ナビ -->
 <nav>
     <a class="nav-logo" href="index.html">LOL<span>.ex</span></a>
     <div class="nav-right">
-        <div class="user-chip" id="user-chip">
-            <i class="fas fa-user"></i>
-            <span id="user-name">---</span>
-        </div>
-        <button class="btn-logout" id="btn-logout">
-            <i class="fas fa-sign-out-alt"></i> ログアウト
-        </button>
+        <div class="user-chip"><i class="fas fa-user"></i><span id="user-name">---</span></div>
+        <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> ログアウト</button>
     </div>
 </nav>
 
-<!-- メイン -->
 <main>
     <div class="page-title">ダッシュボード</div>
     <div class="page-sub">LOL.ex の設定をクラウドと同期・管理できます</div>
-
     <div class="dashboard-grid">
 
-        <!-- 同期カード -->
         <div class="card">
             <div class="card-header">
                 <div class="card-icon purple"><i class="fas fa-cloud-upload-alt"></i></div>
-                <div>
-                    <div class="card-title">クラウド同期</div>
-                    <div class="card-desc">設定をFirebaseに保存・復元</div>
-                </div>
+                <div><div class="card-title">クラウド同期</div><div class="card-desc">設定をFirebaseに保存・復元</div></div>
             </div>
-            <button class="sync-btn upload" id="btn-upload">
+            <button class="sync-btn upload" onclick="doUpload()">
                 <span class="spinner-sm" id="sp-upload"></span>
                 <i class="fas fa-upload" id="ic-upload"></i>
                 クラウドへ保存（アップロード）
             </button>
-            <button class="sync-btn download" id="btn-download">
+            <button class="sync-btn download" onclick="doDownload()">
                 <span class="spinner-sm" id="sp-download"></span>
                 <i class="fas fa-download" id="ic-download"></i>
                 クラウドから復元（ダウンロード）
             </button>
         </div>
 
-        <!-- ステータスカード -->
         <div class="card">
             <div class="card-header">
                 <div class="card-icon cyan"><i class="fas fa-info-circle"></i></div>
-                <div>
-                    <div class="card-title">同期ステータス</div>
-                    <div class="card-desc">最終同期情報</div>
-                </div>
+                <div><div class="card-title">同期ステータス</div><div class="card-desc">最終同期情報</div></div>
             </div>
-            <div class="status-row">
-                <span class="status-key">アカウント</span>
-                <span class="status-val" id="st-email">---</span>
-            </div>
-            <div class="status-row">
-                <span class="status-key">最終アップロード</span>
-                <span class="status-val" id="st-last">未同期</span>
-            </div>
-            <div class="status-row">
-                <span class="status-key">拡張バージョン</span>
-                <span class="status-val"><span class="badge badge-p">v0.81</span></span>
-            </div>
-            <div class="status-row">
-                <span class="status-key">保存設定数</span>
-                <span class="status-val" id="st-count">---</span>
-            </div>
+            <div class="status-row"><span class="status-key">アカウント</span><span class="status-val" id="st-email">---</span></div>
+            <div class="status-row"><span class="status-key">最終アップロード</span><span class="status-val" id="st-last">未同期</span></div>
+            <div class="status-row"><span class="status-key">拡張バージョン</span><span class="status-val"><span class="badge badge-p">v0.81</span></span></div>
+            <div class="status-row"><span class="status-key">保存設定数</span><span class="status-val" id="st-count">---</span></div>
         </div>
 
-        <!-- 操作ログ -->
         <div class="card">
             <div class="card-header">
                 <div class="card-icon purple"><i class="fas fa-terminal"></i></div>
-                <div>
-                    <div class="card-title">操作ログ</div>
-                    <div class="card-desc">同期操作の履歴</div>
-                </div>
+                <div><div class="card-title">操作ログ</div><div class="card-desc">同期操作の履歴</div></div>
             </div>
-            <div class="log-area" id="log-area">
-                <span class="log-ts">--:--:--</span>待機中...<br>
-            </div>
+            <div class="log-area" id="log-area"><span class="log-ts">--:--:--</span>待機中...<br></div>
         </div>
 
-        <!-- 設定プレビュー -->
         <div class="card">
             <div class="card-header">
                 <div class="card-icon cyan"><i class="fas fa-sliders-h"></i></div>
-                <div>
-                    <div class="card-title">現在の設定プレビュー</div>
-                    <div class="card-desc">ブラウザの localStorage から取得</div>
-                </div>
+                <div><div class="card-title">現在の設定プレビュー</div><div class="card-desc">ブラウザの localStorage から取得</div></div>
             </div>
-            <div class="setting-preview" id="setting-preview">
-                <div class="preview-item">
-                    <div class="preview-key">言語</div>
-                    <div class="preview-val" id="pv-lang">---</div>
-                </div>
-                <div class="preview-item">
-                    <div class="preview-key">AIR MOVE 自動切替</div>
-                    <div class="preview-val" id="pv-air">---</div>
-                </div>
-                <div class="preview-item">
-                    <div class="preview-key">プライマリカラー</div>
-                    <div class="preview-val" id="pv-primary">---</div>
-                </div>
-                <div class="preview-item">
-                    <div class="preview-key">セカンダリカラー</div>
-                    <div class="preview-val" id="pv-secondary">---</div>
-                </div>
-                <div class="preview-item">
-                    <div class="preview-key">音量</div>
-                    <div class="preview-val" id="pv-volume">---</div>
-                </div>
-                <div class="preview-item">
-                    <div class="preview-key">ループ</div>
-                    <div class="preview-val" id="pv-loop">---</div>
-                </div>
+            <div class="setting-preview">
+                <div class="preview-item"><div class="preview-key">言語</div><div class="preview-val" id="pv-lang">---</div></div>
+                <div class="preview-item"><div class="preview-key">AIR MOVE 自動切替</div><div class="preview-val" id="pv-air">---</div></div>
+                <div class="preview-item"><div class="preview-key">プライマリカラー</div><div class="preview-val" id="pv-primary">---</div></div>
+                <div class="preview-item"><div class="preview-key">セカンダリカラー</div><div class="preview-val" id="pv-secondary">---</div></div>
+                <div class="preview-item"><div class="preview-key">音量</div><div class="preview-val" id="pv-volume">---</div></div>
+                <div class="preview-item"><div class="preview-key">ループ</div><div class="preview-val" id="pv-loop">---</div></div>
             </div>
         </div>
 
-        <!-- 注意事項 -->
         <div class="card card-full">
             <div class="card-header">
                 <div class="card-icon red"><i class="fas fa-exclamation-triangle"></i></div>
-                <div>
-                    <div class="card-title">使い方 / 注意事項</div>
-                    <div class="card-desc">設定同期を使う前にお読みください</div>
-                </div>
+                <div><div class="card-title">使い方</div><div class="card-desc">設定同期を使う前にお読みください</div></div>
             </div>
             <div style="font-size:0.85rem; color:var(--muted); line-height:1.8; display:grid; grid-template-columns:1fr 1fr; gap:16px;">
                 <div>
-                    <p style="color:var(--text); font-weight:700; margin-bottom:6px;">
-                        <i class="fas fa-upload" style="color:var(--primary); margin-right:6px;"></i>アップロード（クラウドへ保存）
-                    </p>
-                    <p>このページを <strong style="color:var(--text)">LOLBeans.io と同じブラウザ</strong> で開き、「クラウドへ保存」を押してください。LOL.ex の localStorage から設定を読み取り Firebase に保存します。</p>
+                    <p style="color:var(--text); font-weight:700; margin-bottom:6px;"><i class="fas fa-upload" style="color:var(--primary); margin-right:6px;"></i>アップロード</p>
+                    <p><strong style="color:var(--text)">LOLBeans.io と同じブラウザ</strong>でこのページを開き「クラウドへ保存」を押してください。</p>
                 </div>
                 <div>
-                    <p style="color:var(--text); font-weight:700; margin-bottom:6px;">
-                        <i class="fas fa-download" style="color:var(--secondary); margin-right:6px;"></i>ダウンロード（クラウドから復元）
-                    </p>
-                    <p>別のデバイスや再インストール後に「クラウドから復元」を押してください。Firebase から設定を取得し、同じブラウザの localStorage に書き込みます。その後 LOLBeans.io をリロードすれば設定が反映されます。</p>
+                    <p style="color:var(--text); font-weight:700; margin-bottom:6px;"><i class="fas fa-download" style="color:var(--secondary); margin-right:6px;"></i>ダウンロード</p>
+                    <p>別のデバイスや再インストール後に「クラウドから復元」を押してください。その後 LOLBeans.io をリロードすれば反映されます。</p>
                 </div>
             </div>
         </div>
@@ -391,139 +169,169 @@ main {
     </div>
 </main>
 
-<!-- Toast -->
 <div id="toast"></div>
 
-<script type="module">
-import { auth }                from "./js/firebase-config.js";
-import { logout, watchAuth }   from "./js/auth.js";
-import { uploadSettings, downloadSettings, getLastSyncTime, collectSettings } from "./js/sync.js";
-import { signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-// ── 認証チェック ──
-watchAuth(user => {
+<script>
+// ▼▼▼ ここだけ自分のFirebase設定に書き換えてください ▼▼▼
+const firebaseConfig = {
+    apiKey:            "AIzaSyCJqqCzt_xppIt0lg3ItQfPwoR9uLWRWZI",
+    authDomain:        "lolex0204.firebaseapp.com",
+    projectId:         "lolex0204",
+    storageBucket:     "lolex0204.firebasestorage.app",
+    messagingSenderId: "940620254622",
+    appId:             "1:940620254622:web:edca80d191423cd460da8f",
+};
+// ▲▲▲ ここまで ▲▲▲
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+// LOL.ex の設定キー一覧
+const LOLEX_KEYS = [
+    'yt-videoId','yt-playlistId','yt-last-time','customBackgroundUrl','customBackgroundList',
+    'yt-is-visible','yt-loop','yt-shuffle','airMoveAutoSwitchEnabled','lolex-language',
+    'lolex-primary-color','lolex-secondary-color','yt-collapsed','yt-volume','yt-card-visible',
+    'lolex-yt-hotkey','lolex-yt-float-btn',
+];
+['beacon-bay','boulder-hill','circus-contest','devils-trick','dash-cup','escape-tsunami',
+ 'gravity-gates','hammer-ville','jungle-temple','kittie-kegs','lava-lake','mecha-maze',
+ 'mill-valley','monster-manor','polar-path','123-red-light','nasty-seals','rickety-run',
+ 'risky-cliffs','shark-park','silly-slide','spiky-slopes','splash-dash','tumble-town',
+ 'tricky-traps','ufo-attack'
+].forEach(id => LOLEX_KEYS.push('stopAirMove_' + id));
+
+// 認証チェック
+auth.onAuthStateChanged(function(user) {
     document.getElementById('page-loading').classList.add('hidden');
     if (!user) { location.href = 'auth.html'; return; }
-
     document.getElementById('user-name').textContent = user.displayName || user.email;
     document.getElementById('st-email').textContent  = user.email;
-
-    loadSyncTime();
+    loadLastSyncTime(user.uid);
     updatePreview();
 });
 
-// ── ログアウト ──
-document.getElementById('btn-logout').addEventListener('click', async () => {
-    await logout();
-    location.href = 'auth.html';
-});
-
-// ── 最終同期時刻 ──
-async function loadSyncTime() {
+// 最終同期時刻
+async function loadLastSyncTime(uid) {
     try {
-        const d = await getLastSyncTime();
-        document.getElementById('st-last').textContent =
-            d ? d.toLocaleString('ja-JP') : '未同期';
-    } catch (_) {}
+        const snap = await db.collection('users').doc(uid).collection('lolex').doc('settings').get();
+        if (snap.exists && snap.data()._updatedAt) {
+            document.getElementById('st-last').textContent = snap.data()._updatedAt.toDate().toLocaleString('ja-JP');
+        }
+    } catch(_) {}
 }
 
-// ── 設定プレビュー ──
+// 設定プレビュー
 function updatePreview() {
-    const pv = (id, key, transform) => {
+    function pv(id, key, transform) {
         const val = localStorage.getItem(key);
         const el  = document.getElementById(id);
         if (!el) return;
-        el.innerHTML = '';
         if (val === null) { el.textContent = '未設定'; return; }
-        if (transform) { el.innerHTML = transform(val); return; }
-        el.textContent = val;
-    };
-
-    const colorSwatch = v => `<span class="color-swatch" style="background:${v}"></span>${v}`;
-
-    pv('pv-lang',      'lolex-language',          v => v === 'ja' ? '🇯🇵 日本語' : '🇺🇸 English');
-    pv('pv-air',       'airMoveAutoSwitchEnabled', v => v === 'true' ? '✅ ON' : '❌ OFF');
-    pv('pv-primary',   'lolex-primary-color',      colorSwatch);
-    pv('pv-secondary', 'lolex-secondary-color',    colorSwatch);
-    pv('pv-volume',    'yt-volume',                v => `${v}%`);
-    pv('pv-loop',      'yt-loop',                  v => v === 'true' ? '✅ ON' : '❌ OFF');
+        el.innerHTML = transform ? transform(val) : val;
+    }
+    pv('pv-lang',      'lolex-language',          function(v){ return v === 'ja' ? '🇯🇵 日本語' : '🇺🇸 English'; });
+    pv('pv-air',       'airMoveAutoSwitchEnabled', function(v){ return v === 'true' ? '✅ ON' : '❌ OFF'; });
+    pv('pv-primary',   'lolex-primary-color',      function(v){ return '<span class="color-swatch" style="background:'+v+'"></span>'+v; });
+    pv('pv-secondary', 'lolex-secondary-color',    function(v){ return '<span class="color-swatch" style="background:'+v+'"></span>'+v; });
+    pv('pv-volume',    'yt-volume',                function(v){ return v + '%'; });
+    pv('pv-loop',      'yt-loop',                  function(v){ return v === 'true' ? '✅ ON' : '❌ OFF'; });
 }
 
-// ── ログ出力 ──
-function addLog(text, type = '') {
+// ログ
+function addLog(text, type) {
     const area = document.getElementById('log-area');
     const ts   = new Date().toLocaleTimeString('ja-JP');
     const line = document.createElement('span');
-    if (type) line.className = `log-${type}`;
-    line.innerHTML = `<span class="log-ts">${ts}</span>${escapeHtml(text)}<br>`;
+    if (type) line.className = 'log-' + type;
+    line.innerHTML = '<span class="log-ts">' + ts + '</span>' + text + '<br>';
     area.appendChild(line);
     area.scrollTop = area.scrollHeight;
 }
-function escapeHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
 
-// ── Toast ──
-let _toastTimer = null;
-function toast(text, type = 'ok') {
-    const el = document.getElementById('toast');
+// Toast
+var _toastTimer;
+function toast(text, type) {
+    var el = document.getElementById('toast');
     el.textContent = text;
-    el.className   = `show ${type}`;
+    el.className = 'show ' + (type || 'ok');
     clearTimeout(_toastTimer);
-    _toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+    _toastTimer = setTimeout(function(){ el.className = ''; }, 3000);
 }
 
-// ── ローディング ──
+// ローディング
 function setSyncLoading(which, loading) {
-    const sp = document.getElementById(`sp-${which}`);
-    const ic = document.getElementById(`ic-${which}`);
-    const btn = document.getElementById(`btn-${which}`);
-    btn.disabled         = loading;
-    sp.style.display     = loading ? 'block' : 'none';
-    ic.style.display     = loading ? 'none'  : '';
+    document.getElementById('sp-' + which).style.display = loading ? 'block' : 'none';
+    document.getElementById('ic-' + which).style.display = loading ? 'none'  : '';
 }
 
-// ── アップロード ──
-document.getElementById('btn-upload').addEventListener('click', async () => {
+// ログアウト
+async function doLogout() {
+    await auth.signOut();
+    location.href = 'auth.html';
+}
+
+// アップロード
+async function doUpload() {
+    const user = auth.currentUser;
+    if (!user) { toast('ログインしてください', 'err'); return; }
     setSyncLoading('upload', true);
     addLog('アップロード開始...');
     try {
-        const saved = await uploadSettings();
-        const count = Object.keys(saved).length;
-        document.getElementById('st-count').textContent = `${count} 項目`;
-        document.getElementById('st-last').textContent = new Date().toLocaleString('ja-JP');
-        addLog(`✅ ${count} 項目をアップロードしました`, 'ok');
-        toast(`✅ ${count} 項目を保存しました`);
-    } catch (e) {
-        addLog(`❌ エラー: ${e.message}`, 'err');
+        const settings = { _updatedAt: firebase.firestore.FieldValue.serverTimestamp(), _version: '0.81' };
+        LOLEX_KEYS.forEach(function(key) {
+            var val = localStorage.getItem(key);
+            if (val !== null) settings[key] = val;
+        });
+        await db.collection('users').doc(user.uid).collection('lolex').doc('settings').set(settings);
+        var count = Object.keys(settings).length - 2;
+        document.getElementById('st-count').textContent = count + ' 項目';
+        document.getElementById('st-last').textContent  = new Date().toLocaleString('ja-JP');
+        addLog('✅ ' + count + ' 項目をアップロードしました', 'ok');
+        toast('✅ ' + count + ' 項目を保存しました');
+    } catch(e) {
+        console.error(e);
+        addLog('❌ エラー: ' + e.message, 'err');
         toast('❌ アップロードに失敗しました', 'err');
     }
     setSyncLoading('upload', false);
-});
+}
 
-// ── ダウンロード ──
-document.getElementById('btn-download').addEventListener('click', async () => {
+// ダウンロード
+async function doDownload() {
     if (!confirm('クラウドの設定でブラウザの設定を上書きします。よろしいですか？')) return;
+    const user = auth.currentUser;
+    if (!user) { toast('ログインしてください', 'err'); return; }
     setSyncLoading('download', true);
     addLog('ダウンロード開始...');
     try {
-        const restored = await downloadSettings();
-        if (!restored) {
+        const snap = await db.collection('users').doc(user.uid).collection('lolex').doc('settings').get();
+        if (!snap.exists) {
             addLog('⚠️ クラウドに保存データがありません', 'err');
             toast('⚠️ クラウドにデータがありません', 'err');
         } else {
-            const count = Object.keys(restored).length;
-            document.getElementById('st-count').textContent = `${count} 項目`;
-            addLog(`✅ ${count} 項目を復元しました。LOLBeans.io をリロードしてください`, 'ok');
-            toast(`✅ ${count} 項目を復元しました`);
+            const data = snap.data();
+            var count = 0;
+            LOLEX_KEYS.forEach(function(key) {
+                if (data[key] !== undefined) { localStorage.setItem(key, data[key]); count++; }
+            });
+            document.getElementById('st-count').textContent = count + ' 項目';
+            addLog('✅ ' + count + ' 項目を復元しました。LOLBeans.io をリロードしてください', 'ok');
+            toast('✅ ' + count + ' 項目を復元しました');
             updatePreview();
         }
-    } catch (e) {
-        addLog(`❌ エラー: ${e.message}`, 'err');
+    } catch(e) {
+        console.error(e);
+        addLog('❌ エラー: ' + e.message, 'err');
         toast('❌ ダウンロードに失敗しました', 'err');
     }
     setSyncLoading('download', false);
-});
+}
 </script>
 </body>
 </html>
