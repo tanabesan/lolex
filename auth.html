@@ -247,21 +247,22 @@ input.error {
 </div>
 
 <script type="module">
-import { auth }     from "./firebase-config.js";
-import { login, register, watchAuth } from "./auth.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { login, register, watchAuth } from "./js/auth.js";
 
-// ログイン済みならダッシュボードへ
-watchAuth(user => {
-    if (user) location.href = 'dashboard.html';
-});
+// ── メッセージ ──
+function showMsg(text, type = 'error') {
+    const box  = document.getElementById('msg-box');
+    const txt  = document.getElementById('msg-text');
+    const icon = document.getElementById('msg-icon');
+    box.className   = `msg ${type}`;
+    txt.textContent = text;
+    icon.className  = type === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
+}
+function clearMsg() {
+    document.getElementById('msg-box').className = 'msg hidden';
+}
 
-// URLパラメータでタブを初期化
-const params = new URLSearchParams(location.search);
-if (params.get('mode') === 'register') switchTab('register');
-else switchTab('login');
-
-// ── タブ切り替え ──
+// ── タブ切り替え（window に登録してHTMLのonclickから呼べるようにする）──
 window.switchTab = function(tab) {
     document.getElementById('form-login').style.display    = tab === 'login'    ? '' : 'none';
     document.getElementById('form-register').style.display = tab === 'register' ? '' : 'none';
@@ -270,18 +271,14 @@ window.switchTab = function(tab) {
     clearMsg();
 };
 
-// ── メッセージ ──
-function showMsg(text, type = 'error') {
-    const box  = document.getElementById('msg-box');
-    const txt  = document.getElementById('msg-text');
-    const icon = document.getElementById('msg-icon');
-    box.className  = `msg ${type}`;
-    txt.textContent = text;
-    icon.className = type === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
-}
-function clearMsg() {
-    document.getElementById('msg-box').className = 'msg hidden';
-}
+// ログイン済みならダッシュボードへ
+watchAuth(user => {
+    if (user) location.href = 'dashboard.html';
+});
+
+// URLパラメータでタブを初期化
+const params = new URLSearchParams(location.search);
+switchTab(params.get('mode') === 'register' ? 'register' : 'login');
 
 // ── ローディング状態 ──
 function setLoading(formId, loading) {
@@ -289,37 +286,37 @@ function setLoading(formId, loading) {
     const btn     = document.getElementById(`btn-${suffix}`);
     const spinner = document.getElementById(`spinner-${suffix}`);
     const icon    = document.getElementById(`icon-${suffix}`);
-    btn.disabled            = loading;
-    spinner.style.display   = loading ? 'block' : 'none';
-    icon.style.display      = loading ? 'none'  : '';
+    btn.disabled          = loading;
+    spinner.style.display = loading ? 'block' : 'none';
+    icon.style.display    = loading ? 'none'  : '';
 }
 
 // ── パスワード強度 ──
 document.getElementById('reg-password').addEventListener('input', e => {
-    const v   = e.target.value;
-    const bar = document.getElementById('pw-bar');
+    const v    = e.target.value;
+    const bar  = document.getElementById('pw-bar');
     const hint = document.getElementById('pw-hint');
-    let score = 0;
-    if (v.length >= 8)              score++;
-    if (/[A-Z]/.test(v))           score++;
-    if (/[0-9]/.test(v))           score++;
-    if (/[^A-Za-z0-9]/.test(v))    score++;
+    let score  = 0;
+    if (v.length >= 8)           score++;
+    if (/[A-Z]/.test(v))        score++;
+    if (/[0-9]/.test(v))        score++;
+    if (/[^A-Za-z0-9]/.test(v)) score++;
     const colors = ['#cf6679', '#e8a04a', '#b8d04a', '#03DAC6'];
     const labels = ['弱い', 'まあまあ', '強い', 'とても強い'];
     bar.style.width      = v.length === 0 ? '0' : `${(score / 4) * 100}%`;
     bar.style.background = colors[score - 1] || '#cf6679';
-    hint.textContent     = v.length === 0 ? 'パスワードを入力してください' : labels[score - 1] || '弱い';
+    hint.textContent     = v.length === 0 ? 'パスワードを入力してください' : (labels[score - 1] || '弱い');
 });
 
 // ── Firebase エラー日本語訳 ──
 const FB_ERRORS = {
-    'auth/user-not-found':      'このメールアドレスは登録されていません。',
-    'auth/wrong-password':      'パスワードが正しくありません。',
-    'auth/invalid-email':       '正しいメールアドレスを入力してください。',
-    'auth/email-already-in-use':'このメールアドレスはすでに使用されています。',
-    'auth/weak-password':       'パスワードは6文字以上にしてください。',
-    'auth/too-many-requests':   'ログイン試行が多すぎます。しばらく待ってください。',
-    'auth/invalid-credential':  'メールアドレスまたはパスワードが正しくありません。',
+    'auth/user-not-found':         'このメールアドレスは登録されていません。',
+    'auth/wrong-password':         'パスワードが正しくありません。',
+    'auth/invalid-email':          '正しいメールアドレスを入力してください。',
+    'auth/email-already-in-use':   'このメールアドレスはすでに使用されています。',
+    'auth/weak-password':          'パスワードは6文字以上にしてください。',
+    'auth/too-many-requests':      'ログイン試行が多すぎます。しばらく待ってください。',
+    'auth/invalid-credential':     'メールアドレスまたはパスワードが正しくありません。',
     'auth/network-request-failed': 'ネットワークエラーが発生しました。',
 };
 function fbErr(code) {
@@ -351,9 +348,9 @@ document.getElementById('form-register').addEventListener('submit', async e => {
     const name  = document.getElementById('reg-name').value.trim();
     const email = document.getElementById('reg-email').value.trim();
     const pass  = document.getElementById('reg-password').value;
-    if (!name)         { showMsg('ユーザー名を入力してください。');         return; }
-    if (!email)        { showMsg('メールアドレスを入力してください。');      return; }
-    if (pass.length < 6) { showMsg('パスワードは6文字以上にしてください。'); return; }
+    if (!name)           { showMsg('ユーザー名を入力してください。');         return; }
+    if (!email)          { showMsg('メールアドレスを入力してください。');      return; }
+    if (pass.length < 6) { showMsg('パスワードは6文字以上にしてください。');   return; }
     setLoading('form-register', true);
     try {
         await register(email, pass, name);
