@@ -191,6 +191,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
+db.settings({ databaseId: "lolex" });
 
 // LOL.ex の設定キー一覧
 const LOLEX_KEYS = [
