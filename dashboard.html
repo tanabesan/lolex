@@ -18,6 +18,7 @@
     --text:      #dcdce8;
     --muted:     #6b6b8a;
     --danger:    #cf6679;
+    --input-bg:  #0c0c1a;
 }
 body { background: var(--bg); color: var(--text); font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
 body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(187,134,252,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(187,134,252,0.04) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
@@ -28,11 +29,23 @@ nav { position: sticky; top: 0; z-index: 100; display: flex; align-items: center
 .user-chip { display: flex; align-items: center; gap: 8px; background: rgba(187,134,252,0.08); border: 1px solid rgba(187,134,252,0.2); border-radius: 999px; padding: 5px 14px; font-size: 0.84rem; color: var(--primary); }
 .btn-logout { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 7px 14px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; font-size: 0.82rem; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
 .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
-main { position: relative; z-index: 1; flex: 1; padding: 40px 24px; max-width: 900px; margin: 0 auto; width: 100%; }
+main { position: relative; z-index: 1; flex: 1; padding: 40px 24px; max-width: 1000px; margin: 0 auto; width: 100%; }
 .page-title { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 700; margin-bottom: 4px; }
 .page-sub { color: var(--muted); font-size: 0.88rem; margin-bottom: 36px; }
+
+/* タブ */
+.tab-nav { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+.tab-nav-btn { background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 600; letter-spacing: 0.05em; padding: 10px 20px; cursor: pointer; transition: all 0.2s; margin-bottom: -1px; }
+.tab-nav-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-nav-btn:hover { color: var(--text); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* グリッド */
 .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 640px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+/* カード */
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: border-color 0.25s; }
 .card:hover { border-color: rgba(187,134,252,0.3); }
 .card-full { grid-column: 1 / -1; }
@@ -41,41 +54,89 @@ main { position: relative; z-index: 1; flex: 1; padding: 40px 24px; max-width: 9
 .card-icon.purple { background: rgba(187,134,252,0.12); color: var(--primary); }
 .card-icon.cyan   { background: rgba(3,218,198,0.12);   color: var(--secondary); }
 .card-icon.red    { background: rgba(207,102,121,0.12); color: var(--danger); }
+.card-icon.green  { background: rgba(3,218,100,0.12);   color: #03da64; }
 .card-title { font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: 0.05em; }
 .card-desc { font-size: 0.80rem; color: var(--muted); margin-top: 1px; }
+
+/* ボタン */
 .sync-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; margin-bottom: 10px; }
 .sync-btn:last-child { margin-bottom: 0; }
-.sync-btn.upload { background: var(--primary); color: #0a0a18; box-shadow: 0 0 16px rgba(187,134,252,0.2); }
+.sync-btn.upload { background: var(--primary); color: #0a0a18; }
 .sync-btn.upload:hover { filter: brightness(1.1); }
 .sync-btn.download { background: rgba(3,218,198,0.12); color: var(--secondary); border: 1px solid rgba(3,218,198,0.3); }
 .sync-btn.download:hover { background: rgba(3,218,198,0.2); }
+.sync-btn.save { background: #03da64; color: #0a0a18; }
+.sync-btn.save:hover { filter: brightness(1.1); }
 .sync-btn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
 .spinner-sm { width: 14px; height: 14px; border: 2px solid rgba(0,0,0,0.2); border-top-color: currentColor; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ステータス */
 .status-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.83rem; }
 .status-row:last-child { border-bottom: none; }
 .status-key { color: var(--muted); }
 .status-val { color: var(--text); font-weight: 500; }
 .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; }
 .badge-p { background: rgba(187,134,252,0.15); color: var(--primary); }
+
+/* ログ */
 .log-area { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 0.79rem; color: var(--muted); max-height: 120px; overflow-y: auto; font-family: 'Courier New', monospace; line-height: 1.6; }
 .log-ok  { color: var(--secondary); }
 .log-err { color: var(--danger); }
 .log-ts  { color: rgba(255,255,255,0.25); margin-right: 6px; }
-.setting-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
-.preview-item { background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 9px 11px; }
-.preview-key { font-size: 0.72rem; color: var(--muted); margin-bottom: 3px; }
-.preview-val { font-size: 0.82rem; color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.color-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 5px; vertical-align: middle; border: 1px solid rgba(255,255,255,0.15); }
+
+/* 設定エディタ */
+.settings-editor { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) { .settings-editor { grid-template-columns: 1fr; } }
+
+.setting-item { background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; transition: border-color 0.2s; }
+.setting-item:hover { border-color: rgba(187,134,252,0.3); }
+.setting-item-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.setting-item-label { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
+.setting-item-key { font-size: 0.68rem; color: rgba(255,255,255,0.2); font-family: monospace; }
+
+.setting-input { width: 100%; padding: 7px 10px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-size: 0.85rem; outline: none; transition: border-color 0.2s; }
+.setting-input:focus { border-color: var(--primary); }
+
+.setting-toggle { display: flex; gap: 6px; }
+.setting-toggle-btn { flex: 1; padding: 6px; border: 1px solid var(--border); border-radius: 5px; background: transparent; color: var(--muted); font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+.setting-toggle-btn.active-on  { background: rgba(3,218,198,0.15); border-color: var(--secondary); color: var(--secondary); font-weight: 700; }
+.setting-toggle-btn.active-off { background: rgba(187,134,252,0.12); border-color: var(--primary); color: var(--primary); font-weight: 700; }
+
+.color-input-row { display: flex; align-items: center; gap: 8px; }
+.color-preview { width: 28px; height: 28px; border-radius: 5px; border: 1px solid var(--border); flex-shrink: 0; cursor: pointer; }
+
+/* コース設定 */
+.course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.course-item { display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-size: 0.82rem; }
+.course-name { color: var(--text); }
+.course-toggle { display: flex; gap: 4px; }
+.course-toggle-btn { padding: 3px 8px; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--muted); font-size: 0.75rem; cursor: pointer; transition: all 0.15s; }
+.course-toggle-btn.active-on  { background: rgba(3,218,198,0.15); border-color: var(--secondary); color: var(--secondary); font-weight: 700; }
+.course-toggle-btn.active-off { background: rgba(187,134,252,0.12); border-color: var(--primary); color: var(--primary); font-weight: 700; }
+
+/* セクションタイトル */
+.section-title { font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700; color: var(--secondary); letter-spacing: 0.08em; text-transform: uppercase; margin: 24px 0 12px; display: flex; align-items: center; gap: 8px; }
+.section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(3,218,198,0.3), transparent); }
+
+/* Toast */
 #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 22px; font-size: 0.86rem; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 9999; opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 #toast.ok  { border-color: rgba(3,218,198,0.4); color: var(--secondary); }
 #toast.err { border-color: rgba(207,102,121,0.4); color: var(--danger); }
+
+/* ローディング */
 #page-loading { position: fixed; inset: 0; background: var(--bg); z-index: 9000; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
 #page-loading.hidden { display: none; }
 .loader-logo { font-family: 'Rajdhani', sans-serif; font-size: 2rem; font-weight: 700; color: var(--primary); }
 .loader-logo span { color: var(--secondary); }
 .loader-ring { width: 36px; height: 36px; border: 3px solid rgba(187,134,252,0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+.save-bar { position: sticky; bottom: 0; background: rgba(8,8,16,0.95); backdrop-filter: blur(12px); border-top: 1px solid var(--border); padding: 12px 24px; display: none; align-items: center; justify-content: space-between; z-index: 50; }
+.save-bar.visible { display: flex; }
+.save-bar-text { font-size: 0.85rem; color: var(--muted); }
+.save-bar-btn { background: #03da64; color: #0a0a18; border: none; border-radius: 8px; padding: 10px 28px; font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; transition: filter 0.2s; }
+.save-bar-btn:hover { filter: brightness(1.1); }
 </style>
 </head>
 <body>
@@ -95,78 +156,240 @@ main { position: relative; z-index: 1; flex: 1; padding: 40px 24px; max-width: 9
 
 <main>
     <div class="page-title">ダッシュボード</div>
-    <div class="page-sub">LOL.ex の設定をクラウドと同期・管理できます</div>
-    <div class="dashboard-grid">
+    <div class="page-sub">LOL.ex の設定をクラウドで管理・編集できます</div>
 
-        <div class="card">
-            <div class="card-header">
-                <div class="card-icon purple"><i class="fas fa-cloud-upload-alt"></i></div>
-                <div><div class="card-title">クラウド同期</div><div class="card-desc">設定をFirebaseに保存・復元</div></div>
+    <!-- タブナビ -->
+    <div class="tab-nav">
+        <button class="tab-nav-btn active" onclick="switchTab('sync')">☁️ 同期</button>
+        <button class="tab-nav-btn" onclick="switchTab('settings')">⚙️ 設定編集</button>
+        <button class="tab-nav-btn" onclick="switchTab('courses')">🗺️ コース設定</button>
+    </div>
+
+    <!-- ── タブ1: 同期 ── -->
+    <div class="tab-content active" id="tab-sync">
+        <div class="dashboard-grid">
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon purple"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <div><div class="card-title">クラウド同期</div><div class="card-desc">設定をFirebaseに保存・復元</div></div>
+                </div>
+                <button class="sync-btn upload" onclick="doUpload()">
+                    <span class="spinner-sm" id="sp-upload"></span>
+                    <i class="fas fa-upload" id="ic-upload"></i>
+                    クラウドへ保存（アップロード）
+                </button>
+                <button class="sync-btn download" onclick="doDownload()">
+                    <span class="spinner-sm" id="sp-download"></span>
+                    <i class="fas fa-download" id="ic-download"></i>
+                    クラウドから復元（ダウンロード）
+                </button>
             </div>
-            <button class="sync-btn upload" onclick="doUpload()">
-                <span class="spinner-sm" id="sp-upload"></span>
-                <i class="fas fa-upload" id="ic-upload"></i>
-                クラウドへ保存（アップロード）
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon cyan"><i class="fas fa-info-circle"></i></div>
+                    <div><div class="card-title">同期ステータス</div><div class="card-desc">最終同期情報</div></div>
+                </div>
+                <div class="status-row"><span class="status-key">アカウント</span><span class="status-val" id="st-email">---</span></div>
+                <div class="status-row"><span class="status-key">最終アップロード</span><span class="status-val" id="st-last">未同期</span></div>
+                <div class="status-row"><span class="status-key">拡張バージョン</span><span class="status-val"><span class="badge badge-p">v0.81</span></span></div>
+                <div class="status-row"><span class="status-key">保存設定数</span><span class="status-val" id="st-count">---</span></div>
+            </div>
+
+            <div class="card card-full">
+                <div class="card-header">
+                    <div class="card-icon purple"><i class="fas fa-terminal"></i></div>
+                    <div><div class="card-title">操作ログ</div><div class="card-desc">同期操作の履歴</div></div>
+                </div>
+                <div class="log-area" id="log-area"><span class="log-ts">--:--:--</span>待機中...<br></div>
+            </div>
+
+            <div class="card card-full">
+                <div class="card-header">
+                    <div class="card-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div><div class="card-title">使い方</div></div>
+                </div>
+                <div style="font-size:0.85rem; color:var(--muted); line-height:1.8; display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                    <div>
+                        <p style="color:var(--text); font-weight:700; margin-bottom:6px;"><i class="fas fa-upload" style="color:var(--primary); margin-right:6px;"></i>アップロード</p>
+                        <p><strong style="color:var(--text)">LOLBeans.io と同じブラウザ</strong>でこのページを開き「クラウドへ保存」を押してください。</p>
+                    </div>
+                    <div>
+                        <p style="color:var(--text); font-weight:700; margin-bottom:6px;"><i class="fas fa-edit" style="color:var(--secondary); margin-right:6px;"></i>設定編集</p>
+                        <p>「設定編集」タブでクラウドの設定を直接編集できます。編集後は「保存」を押してFirebaseに反映させてください。</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── タブ2: 設定編集 ── -->
+    <div class="tab-content" id="tab-settings">
+        <div class="card card-full" style="margin-bottom:16px;">
+            <div class="card-header">
+                <div class="card-icon green"><i class="fas fa-edit"></i></div>
+                <div><div class="card-title">クラウド設定を編集</div><div class="card-desc">Firebaseに保存されている設定を直接編集できます</div></div>
+            </div>
+            <button class="sync-btn download" onclick="loadSettingsForEdit()" style="margin-bottom:16px;">
+                <i class="fas fa-cloud-download-alt"></i> クラウドから設定を読み込む
             </button>
-            <button class="sync-btn download" onclick="doDownload()">
-                <span class="spinner-sm" id="sp-download"></span>
-                <i class="fas fa-download" id="ic-download"></i>
-                クラウドから復元（ダウンロード）
-            </button>
-        </div>
 
-        <div class="card">
-            <div class="card-header">
-                <div class="card-icon cyan"><i class="fas fa-info-circle"></i></div>
-                <div><div class="card-title">同期ステータス</div><div class="card-desc">最終同期情報</div></div>
-            </div>
-            <div class="status-row"><span class="status-key">アカウント</span><span class="status-val" id="st-email">---</span></div>
-            <div class="status-row"><span class="status-key">最終アップロード</span><span class="status-val" id="st-last">未同期</span></div>
-            <div class="status-row"><span class="status-key">拡張バージョン</span><span class="status-val"><span class="badge badge-p">v0.81</span></span></div>
-            <div class="status-row"><span class="status-key">保存設定数</span><span class="status-val" id="st-count">---</span></div>
-        </div>
+            <div id="settings-editor-container" style="display:none;">
+                <div class="section-title"><i class="fas fa-paint-brush"></i> 見た目</div>
+                <div class="settings-editor">
 
-        <div class="card">
-            <div class="card-header">
-                <div class="card-icon purple"><i class="fas fa-terminal"></i></div>
-                <div><div class="card-title">操作ログ</div><div class="card-desc">同期操作の履歴</div></div>
-            </div>
-            <div class="log-area" id="log-area"><span class="log-ts">--:--:--</span>待機中...<br></div>
-        </div>
+                    <div class="setting-item">
+                        <div class="setting-item-header">
+                            <span class="setting-item-label">🌐 言語</span>
+                            <span class="setting-item-key">lolex-language</span>
+                        </div>
+                        <div class="setting-toggle">
+                            <button class="setting-toggle-btn" id="lang-ja" onclick="setLang('ja')">🇯🇵 日本語</button>
+                            <button class="setting-toggle-btn" id="lang-en" onclick="setLang('en')">🇺🇸 English</button>
+                        </div>
+                    </div>
 
-        <div class="card">
-            <div class="card-header">
-                <div class="card-icon cyan"><i class="fas fa-sliders-h"></i></div>
-                <div><div class="card-title">現在の設定プレビュー</div><div class="card-desc">ブラウザの localStorage から取得</div></div>
-            </div>
-            <div class="setting-preview">
-                <div class="preview-item"><div class="preview-key">言語</div><div class="preview-val" id="pv-lang">---</div></div>
-                <div class="preview-item"><div class="preview-key">AIR MOVE 自動切替</div><div class="preview-val" id="pv-air">---</div></div>
-                <div class="preview-item"><div class="preview-key">プライマリカラー</div><div class="preview-val" id="pv-primary">---</div></div>
-                <div class="preview-item"><div class="preview-key">セカンダリカラー</div><div class="preview-val" id="pv-secondary">---</div></div>
-                <div class="preview-item"><div class="preview-key">音量</div><div class="preview-val" id="pv-volume">---</div></div>
-                <div class="preview-item"><div class="preview-key">ループ</div><div class="preview-val" id="pv-loop">---</div></div>
+                    <div class="setting-item">
+                        <div class="setting-item-header">
+                            <span class="setting-item-label">🎨 プライマリカラー</span>
+                            <span class="setting-item-key">lolex-primary-color</span>
+                        </div>
+                        <div class="color-input-row">
+                            <div class="color-preview" id="primary-preview" onclick="document.getElementById('primary-color-input').click()"></div>
+                            <input type="color" id="primary-color-input" style="display:none;" onchange="updateColor('primary', this.value)">
+                            <input type="text" class="setting-input" id="primary-color-text" placeholder="#BB86FC" oninput="updateColorFromText('primary', this.value)">
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-item-header">
+                            <span class="setting-item-label">🎨 セカンダリカラー</span>
+                            <span class="setting-item-key">lolex-secondary-color</span>
+                        </div>
+                        <div class="color-input-row">
+                            <div class="color-preview" id="secondary-preview" onclick="document.getElementById('secondary-color-input').click()"></div>
+                            <input type="color" id="secondary-color-input" style="display:none;" onchange="updateColor('secondary', this.value)">
+                            <input type="text" class="setting-input" id="secondary-color-text" placeholder="#03DAC6" oninput="updateColorFromText('secondary', this.value)">
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-item-header">
+                            <span class="setting-item-label">🖼️ 背景URL</span>
+                            <span class="setting-item-key">customBackgroundUrl</span>
+                        </div>
+                        <input type="text" class="setting-input" id="bg-url-input" placeholder="https://..." oninput="markDirty()">
+                    </div>
+
+                </div>
+
+                <div class="section-title"><i class="fas fa-gamepad"></i> ゲーム</div>
+                <div class="settings-editor">
+
+                    <div class="setting-item">
+                        <div class="setting-item-header">
+                            <span class="setting-item-label">💨 Air Move 自動切替</span>
+                            <span class="setting-item-key">airMoveAutoSwitchEnabled</span>
+                        </div>
+                        <div class="setting-toggle">
+                            <button class="setting-toggle-btn" id="airmove-on"  onclick="setBool('airMoveAutoSwitchEnabled', true)">ON</button>
+                            <button class="setting-toggle-btn" id="airmove-off" onclick="setBool('airMoveAutoSwitchEnabled', false)">OFF</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="section-title"><i class="fab fa-youtube"></i> YouTube</div>
+                <div class="settings-editor">
+
+                    <div class="setting-item">
+                        <div class="setting-item-header">
+                            <span class="setting-item-label">🔁 ループ再生</span>
+                            <span class="setting-item-key">yt-loop</span>
+                        </div>
+                        <div class="setting-toggle">
+                            <button class="setting-toggle-btn" id="loop-on"  onclick="setBool('yt-loop', true)">ON</button>
+                            <button class="setting-toggle-btn" id="loop-off" onclick="setBool('yt-loop', false)">OFF</button>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-item-header">
+                            <span class="setting-item-label">🔀 シャッフル</span>
+                            <span class="setting-item-key">yt-shuffle</span>
+                        </div>
+                        <div class="setting-toggle">
+                            <button class="setting-toggle-btn" id="shuffle-on"  onclick="setBool('yt-shuffle', true)">ON</button>
+                            <button class="setting-toggle-btn" id="shuffle-off" onclick="setBool('yt-shuffle', false)">OFF</button>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-item-header">
+                            <span class="setting-item-label">🔊 音量</span>
+                            <span class="setting-item-key">yt-volume</span>
+                        </div>
+                        <input type="range" min="0" max="100" class="setting-input" id="volume-input" style="padding:4px 0;" oninput="document.getElementById('volume-val').textContent=this.value+'%'; markDirty()">
+                        <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;" id="volume-val">---</div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-item-header">
+                            <span class="setting-item-label">📺 YouTube URL / ID</span>
+                            <span class="setting-item-key">yt-videoId / yt-playlistId</span>
+                        </div>
+                        <input type="text" class="setting-input" id="yt-url-input" placeholder="URL or Video ID" oninput="markDirty()">
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-item-header">
+                            <span class="setting-item-label">🎵 フロートボタン</span>
+                            <span class="setting-item-key">lolex-yt-float-btn</span>
+                        </div>
+                        <div class="setting-toggle">
+                            <button class="setting-toggle-btn" id="float-show"  onclick="setFloat('show')">表示</button>
+                            <button class="setting-toggle-btn" id="float-faint" onclick="setFloat('faint')">薄表示</button>
+                            <button class="setting-toggle-btn" id="float-hide"  onclick="setFloat('hide')">非表示</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div style="margin-top: 24px; display: flex; gap: 12px;">
+                    <button class="sync-btn save" onclick="saveSettings()" style="max-width:300px;">
+                        <i class="fas fa-save"></i> Firebaseに保存
+                    </button>
+                    <button class="sync-btn" onclick="loadSettingsForEdit()" style="max-width:200px; background:rgba(255,255,255,0.05); color:var(--muted); border:1px solid var(--border);">
+                        <i class="fas fa-redo"></i> 再読み込み
+                    </button>
+                </div>
             </div>
         </div>
+    </div>
 
+    <!-- ── タブ3: コース設定 ── -->
+    <div class="tab-content" id="tab-courses">
         <div class="card card-full">
             <div class="card-header">
-                <div class="card-icon red"><i class="fas fa-exclamation-triangle"></i></div>
-                <div><div class="card-title">使い方</div><div class="card-desc">設定同期を使う前にお読みください</div></div>
+                <div class="card-icon cyan"><i class="fas fa-map-signs"></i></div>
+                <div><div class="card-title">コース別 Air Move 設定</div><div class="card-desc">各コースのAir Move ON/OFFをFirebaseで管理</div></div>
             </div>
-            <div style="font-size:0.85rem; color:var(--muted); line-height:1.8; display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                <div>
-                    <p style="color:var(--text); font-weight:700; margin-bottom:6px;"><i class="fas fa-upload" style="color:var(--primary); margin-right:6px;"></i>アップロード</p>
-                    <p><strong style="color:var(--text)">LOLBeans.io と同じブラウザ</strong>でこのページを開き「クラウドへ保存」を押してください。</p>
-                </div>
-                <div>
-                    <p style="color:var(--text); font-weight:700; margin-bottom:6px;"><i class="fas fa-download" style="color:var(--secondary); margin-right:6px;"></i>ダウンロード</p>
-                    <p>別のデバイスや再インストール後に「クラウドから復元」を押してください。その後 LOLBeans.io をリロードすれば反映されます。</p>
+            <button class="sync-btn download" onclick="loadSettingsForEdit()" style="margin-bottom:16px;">
+                <i class="fas fa-cloud-download-alt"></i> クラウドから設定を読み込む
+            </button>
+            <div id="course-grid-container" style="display:none;">
+                <div class="course-grid" id="course-grid"></div>
+                <div style="margin-top:16px;">
+                    <button class="sync-btn save" onclick="saveSettings()" style="max-width:300px;">
+                        <i class="fas fa-save"></i> Firebaseに保存
+                    </button>
                 </div>
             </div>
         </div>
-
     </div>
+
 </main>
 
 <div id="toast"></div>
@@ -177,7 +400,7 @@ main { position: relative; z-index: 1; flex: 1; padding: 40px 24px; max-width: 9
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
-// ▼▼▼ ここだけ自分のFirebase設定に書き換えてください ▼▼▼
+// ▼▼▼ Firebase設定 ▼▼▼
 const firebaseConfig = {
     apiKey:            "AIzaSyCJqqCzt_xppIt0lg3ItQfPwoR9uLWRWZI",
     authDomain:        "lolex0204.firebaseapp.com",
@@ -186,25 +409,52 @@ const firebaseConfig = {
     messagingSenderId: "940620254622",
     appId:             "1:940620254622:web:edca80d191423cd460da8f",
 };
-// ▲▲▲ ここまで ▲▲▲
+// ▲▲▲ Firebase設定 ▲▲▲
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-// LOL.ex の設定キー一覧
+const COURSES = [
+    { id: 'beacon-bay',    name: '🚨 Beacon Bay' },
+    { id: 'boulder-hill',  name: '🐛 Boulder Hill' },
+    { id: 'circus-contest',name: '🎪 Circus Contest' },
+    { id: 'devils-trick',  name: "👿 Devil's Trick" },
+    { id: 'dash-cup',      name: '🏆 Dash Cup' },
+    { id: 'escape-tsunami',name: '🌊 Escape Tsunami' },
+    { id: 'gravity-gates', name: '🌌 Gravity Gates' },
+    { id: 'hammer-ville',  name: '🍩 Hammer Ville' },
+    { id: 'jungle-temple', name: '🐍 Jungle Temple' },
+    { id: 'kittie-kegs',   name: '🐱 Kittie Kegs' },
+    { id: 'lava-lake',     name: '🌋 Lava Lake' },
+    { id: 'mecha-maze',    name: '🤖 Mecha Maze' },
+    { id: 'mill-valley',   name: '🌾 Mill Valley' },
+    { id: 'monster-manor', name: '🎃 Monster Manor' },
+    { id: 'polar-path',    name: '🧊 Polar Path' },
+    { id: '123-red-light', name: '🦑 1-2-3 Red Light' },
+    { id: 'nasty-seals',   name: '🦑 Nasty Seals' },
+    { id: 'rickety-run',   name: '🟦 Rickety Run' },
+    { id: 'risky-cliffs',  name: '🎅 Risky Cliffs' },
+    { id: 'shark-park',    name: '🦈 Shark Park' },
+    { id: 'silly-slide',   name: '🛝 Silly Slide' },
+    { id: 'spiky-slopes',  name: '🔨 Spiky Slopes' },
+    { id: 'splash-dash',   name: '🏊 Splash Dash' },
+    { id: 'tumble-town',   name: '✋ Tumble Town' },
+    { id: 'tricky-traps',  name: '🎁 Tricky Traps' },
+    { id: 'ufo-attack',    name: '🛸 UFO Attack' },
+];
+
 const LOLEX_KEYS = [
     'yt-videoId','yt-playlistId','yt-last-time','customBackgroundUrl','customBackgroundList',
     'yt-is-visible','yt-loop','yt-shuffle','airMoveAutoSwitchEnabled','lolex-language',
     'lolex-primary-color','lolex-secondary-color','yt-collapsed','yt-volume','yt-card-visible',
     'lolex-yt-hotkey','lolex-yt-float-btn',
 ];
-['beacon-bay','boulder-hill','circus-contest','devils-trick','dash-cup','escape-tsunami',
- 'gravity-gates','hammer-ville','jungle-temple','kittie-kegs','lava-lake','mecha-maze',
- 'mill-valley','monster-manor','polar-path','123-red-light','nasty-seals','rickety-run',
- 'risky-cliffs','shark-park','silly-slide','spiky-slopes','splash-dash','tumble-town',
- 'tricky-traps','ufo-attack'
-].forEach(id => LOLEX_KEYS.push('stopAirMove_' + id));
+COURSES.forEach(c => LOLEX_KEYS.push('stopAirMove_' + c.id));
+
+// 編集中のデータ
+var _editData = {};
+var _dirty = false;
 
 // 認証チェック
 auth.onAuthStateChanged(function(user) {
@@ -213,41 +463,32 @@ auth.onAuthStateChanged(function(user) {
     document.getElementById('user-name').textContent = user.displayName || user.email;
     document.getElementById('st-email').textContent  = user.email;
     loadLastSyncTime(user.uid);
-    updatePreview();
 });
 
-// 最終同期時刻
 async function loadLastSyncTime(uid) {
     try {
-        const snap = await db.collection('users').doc(uid).collection('lolex').doc('settings').get();
+        var snap = await db.collection('users').doc(uid).collection('lolex').doc('settings').get();
         if (snap.exists && snap.data()._updatedAt) {
             document.getElementById('st-last').textContent = snap.data()._updatedAt.toDate().toLocaleString('ja-JP');
         }
     } catch(_) {}
 }
 
-// 設定プレビュー
-function updatePreview() {
-    function pv(id, key, transform) {
-        const val = localStorage.getItem(key);
-        const el  = document.getElementById(id);
-        if (!el) return;
-        if (val === null) { el.textContent = '未設定'; return; }
-        el.innerHTML = transform ? transform(val) : val;
-    }
-    pv('pv-lang',      'lolex-language',          function(v){ return v === 'ja' ? '🇯🇵 日本語' : '🇺🇸 English'; });
-    pv('pv-air',       'airMoveAutoSwitchEnabled', function(v){ return v === 'true' ? '✅ ON' : '❌ OFF'; });
-    pv('pv-primary',   'lolex-primary-color',      function(v){ return '<span class="color-swatch" style="background:'+v+'"></span>'+v; });
-    pv('pv-secondary', 'lolex-secondary-color',    function(v){ return '<span class="color-swatch" style="background:'+v+'"></span>'+v; });
-    pv('pv-volume',    'yt-volume',                function(v){ return v + '%'; });
-    pv('pv-loop',      'yt-loop',                  function(v){ return v === 'true' ? '✅ ON' : '❌ OFF'; });
+// タブ切り替え
+function switchTab(name) {
+    document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+    document.querySelectorAll('.tab-nav-btn').forEach(function(el) { el.classList.remove('active'); });
+    document.getElementById('tab-' + name).classList.add('active');
+    var btns = document.querySelectorAll('.tab-nav-btn');
+    var map = { sync: 0, settings: 1, courses: 2 };
+    btns[map[name]].classList.add('active');
 }
 
 // ログ
 function addLog(text, type) {
-    const area = document.getElementById('log-area');
-    const ts   = new Date().toLocaleTimeString('ja-JP');
-    const line = document.createElement('span');
+    var area = document.getElementById('log-area');
+    var ts   = new Date().toLocaleTimeString('ja-JP');
+    var line = document.createElement('span');
     if (type) line.className = 'log-' + type;
     line.innerHTML = '<span class="log-ts">' + ts + '</span>' + text + '<br>';
     area.appendChild(line);
@@ -267,7 +508,7 @@ function toast(text, type) {
 // ローディング
 function setSyncLoading(which, loading) {
     document.getElementById('sp-' + which).style.display = loading ? 'block' : 'none';
-    document.getElementById('ic-' + which).style.display = loading ? 'none'  : '';
+    document.getElementById('ic-' + which).style.display = loading ? 'none' : '';
 }
 
 // ログアウト
@@ -278,12 +519,12 @@ async function doLogout() {
 
 // アップロード
 async function doUpload() {
-    const user = auth.currentUser;
+    var user = auth.currentUser;
     if (!user) { toast('ログインしてください', 'err'); return; }
     setSyncLoading('upload', true);
     addLog('アップロード開始...');
     try {
-        const settings = { _updatedAt: firebase.firestore.FieldValue.serverTimestamp(), _version: '0.81' };
+        var settings = { _updatedAt: firebase.firestore.FieldValue.serverTimestamp(), _version: '0.81' };
         LOLEX_KEYS.forEach(function(key) {
             var val = localStorage.getItem(key);
             if (val !== null) settings[key] = val;
@@ -295,27 +536,26 @@ async function doUpload() {
         addLog('✅ ' + count + ' 項目をアップロードしました', 'ok');
         toast('✅ ' + count + ' 項目を保存しました');
     } catch(e) {
-        console.error(e);
         addLog('❌ エラー: ' + e.message, 'err');
         toast('❌ アップロードに失敗しました', 'err');
     }
     setSyncLoading('upload', false);
 }
 
-// ダウンロード
+// ダウンロード（lolbeans.ioのlocalStorageに書き込む）
 async function doDownload() {
     if (!confirm('クラウドの設定でブラウザの設定を上書きします。よろしいですか？')) return;
-    const user = auth.currentUser;
+    var user = auth.currentUser;
     if (!user) { toast('ログインしてください', 'err'); return; }
     setSyncLoading('download', true);
     addLog('ダウンロード開始...');
     try {
-        const snap = await db.collection('users').doc(user.uid).collection('lolex').doc('settings').get();
+        var snap = await db.collection('users').doc(user.uid).collection('lolex').doc('settings').get();
         if (!snap.exists) {
             addLog('⚠️ クラウドに保存データがありません', 'err');
             toast('⚠️ クラウドにデータがありません', 'err');
         } else {
-            const data = snap.data();
+            var data = snap.data();
             var count = 0;
             LOLEX_KEYS.forEach(function(key) {
                 if (data[key] !== undefined) { localStorage.setItem(key, data[key]); count++; }
@@ -323,14 +563,198 @@ async function doDownload() {
             document.getElementById('st-count').textContent = count + ' 項目';
             addLog('✅ ' + count + ' 項目を復元しました。LOLBeans.io をリロードしてください', 'ok');
             toast('✅ ' + count + ' 項目を復元しました');
-            updatePreview();
         }
     } catch(e) {
-        console.error(e);
         addLog('❌ エラー: ' + e.message, 'err');
         toast('❌ ダウンロードに失敗しました', 'err');
     }
     setSyncLoading('download', false);
+}
+
+// ── 設定編集 ──
+
+async function loadSettingsForEdit() {
+    var user = auth.currentUser;
+    if (!user) { toast('ログインしてください', 'err'); return; }
+    try {
+        var snap = await db.collection('users').doc(user.uid).collection('lolex').doc('settings').get();
+        if (!snap.exists) { toast('クラウドにデータがありません。先にアップロードしてください。', 'err'); return; }
+        _editData = snap.data();
+        _dirty = false;
+        renderSettingsEditor();
+        renderCourseGrid();
+        document.getElementById('settings-editor-container').style.display = '';
+        document.getElementById('course-grid-container').style.display = '';
+        toast('✅ 設定を読み込みました');
+    } catch(e) {
+        toast('❌ 読み込みエラー: ' + e.message, 'err');
+    }
+}
+
+function renderSettingsEditor() {
+    // 言語
+    setActiveToggle('lang', _editData['lolex-language'] || 'ja');
+
+    // カラー
+    setColorUI('primary', _editData['lolex-primary-color'] || '#BB86FC');
+    setColorUI('secondary', _editData['lolex-secondary-color'] || '#03DAC6');
+
+    // 背景URL
+    var bgInput = document.getElementById('bg-url-input');
+    if (bgInput) bgInput.value = _editData['customBackgroundUrl'] || '';
+
+    // Air Move
+    setActiveToggle('airmove', _editData['airMoveAutoSwitchEnabled'] === 'true' ? 'on' : 'off');
+
+    // ループ
+    setActiveToggle('loop', _editData['yt-loop'] === 'true' ? 'on' : 'off');
+
+    // シャッフル
+    setActiveToggle('shuffle', _editData['yt-shuffle'] === 'true' ? 'on' : 'off');
+
+    // 音量
+    var vol = _editData['yt-volume'] || '80';
+    var volInput = document.getElementById('volume-input');
+    if (volInput) { volInput.value = vol; document.getElementById('volume-val').textContent = vol + '%'; }
+
+    // YouTube URL
+    var ytInput = document.getElementById('yt-url-input');
+    if (ytInput) {
+        var pl = _editData['yt-playlistId'];
+        var vi = _editData['yt-videoId'];
+        ytInput.value = pl ? 'https://www.youtube.com/playlist?list=' + pl : vi ? 'https://www.youtube.com/watch?v=' + vi : '';
+    }
+
+    // フロートボタン
+    var floatVal = _editData['lolex-yt-float-btn'] || 'show';
+    setActiveToggle('float', floatVal);
+}
+
+function setColorUI(which, val) {
+    var preview = document.getElementById(which + '-preview');
+    var textInput = document.getElementById(which + '-color-text');
+    var colorInput = document.getElementById(which + '-color-input');
+    if (preview)    preview.style.background = val;
+    if (textInput)  textInput.value = val;
+    if (colorInput) colorInput.value = val;
+}
+
+function updateColor(which, val) {
+    _editData['lolex-' + which + '-color'] = val;
+    setColorUI(which, val);
+    markDirty();
+}
+
+function updateColorFromText(which, val) {
+    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+        _editData['lolex-' + which + '-color'] = val;
+        var preview = document.getElementById(which + '-preview');
+        var colorInput = document.getElementById(which + '-color-input');
+        if (preview)    preview.style.background = val;
+        if (colorInput) colorInput.value = val;
+        markDirty();
+    }
+}
+
+function setActiveToggle(prefix, val) {
+    document.querySelectorAll('[id^="' + prefix + '-"]').forEach(function(btn) {
+        btn.classList.remove('active-on', 'active-off');
+    });
+    var target = document.getElementById(prefix + '-' + val);
+    if (target) target.classList.add(val === 'on' || val === 'ja' || val === 'show' ? 'active-on' : 'active-off');
+}
+
+function setLang(val) {
+    _editData['lolex-language'] = val;
+    document.getElementById('lang-ja').classList.remove('active-on','active-off');
+    document.getElementById('lang-en').classList.remove('active-on','active-off');
+    document.getElementById('lang-' + val).classList.add('active-on');
+    markDirty();
+}
+
+function setBool(key, val) {
+    _editData[key] = String(val);
+    var prefix = key === 'airMoveAutoSwitchEnabled' ? 'airmove' : key === 'yt-loop' ? 'loop' : 'shuffle';
+    setActiveToggle(prefix, val ? 'on' : 'off');
+    markDirty();
+}
+
+function setFloat(val) {
+    _editData['lolex-yt-float-btn'] = val;
+    ['show','faint','hide'].forEach(function(v) {
+        var btn = document.getElementById('float-' + v);
+        if (btn) btn.classList.remove('active-on', 'active-off');
+    });
+    var target = document.getElementById('float-' + val);
+    if (target) target.classList.add(val === 'show' ? 'active-on' : 'active-off');
+    markDirty();
+}
+
+function markDirty() { _dirty = true; }
+
+function renderCourseGrid() {
+    var grid = document.getElementById('course-grid');
+    grid.innerHTML = '';
+    COURSES.forEach(function(course) {
+        var val = _editData['stopAirMove_' + course.id] === 'true';
+        var item = document.createElement('div');
+        item.className = 'course-item';
+        item.innerHTML =
+            '<span class="course-name">' + course.name + '</span>' +
+            '<div class="course-toggle">' +
+                '<button class="course-toggle-btn ' + (val ? 'active-on' : '') + '" id="course-on-' + course.id + '" onclick="setCourse(\'' + course.id + '\', true)">ON</button>' +
+                '<button class="course-toggle-btn ' + (!val ? 'active-off' : '') + '" id="course-off-' + course.id + '" onclick="setCourse(\'' + course.id + '\', false)">OFF</button>' +
+            '</div>';
+        grid.appendChild(item);
+    });
+}
+
+function setCourse(id, val) {
+    _editData['stopAirMove_' + id] = String(val);
+    var onBtn  = document.getElementById('course-on-'  + id);
+    var offBtn = document.getElementById('course-off-' + id);
+    if (onBtn)  { onBtn.classList.remove('active-on','active-off');  if (val)  onBtn.classList.add('active-on'); }
+    if (offBtn) { offBtn.classList.remove('active-on','active-off'); if (!val) offBtn.classList.add('active-off'); }
+    markDirty();
+}
+
+async function saveSettings() {
+    var user = auth.currentUser;
+    if (!user) { toast('ログインしてください', 'err'); return; }
+
+    // テキストフィールドの値を反映
+    var bgInput = document.getElementById('bg-url-input');
+    if (bgInput) _editData['customBackgroundUrl'] = bgInput.value;
+
+    var volInput = document.getElementById('volume-input');
+    if (volInput) _editData['yt-volume'] = volInput.value;
+
+    // YouTube URL をパース
+    var ytInput = document.getElementById('yt-url-input');
+    if (ytInput && ytInput.value.trim()) {
+        var ytVal = ytInput.value.trim();
+        try {
+            var url = new URL(ytVal);
+            var vi  = url.searchParams.get('v');
+            var pl  = url.searchParams.get('list');
+            if (vi)  _editData['yt-videoId']    = vi;
+            if (pl)  _editData['yt-playlistId'] = pl;
+        } catch(_) {
+            if (/^[A-Za-z0-9_-]{11}$/.test(ytVal)) _editData['yt-videoId'] = ytVal;
+        }
+    }
+
+    _editData['_updatedAt'] = firebase.firestore.FieldValue.serverTimestamp();
+
+    try {
+        await db.collection('users').doc(user.uid).collection('lolex').doc('settings').set(_editData);
+        _dirty = false;
+        document.getElementById('st-last').textContent = new Date().toLocaleString('ja-JP');
+        toast('✅ Firebaseに保存しました！');
+        addLog('✅ 設定を編集・保存しました', 'ok');
+    } catch(e) {
+        toast('❌ 保存エラー: ' + e.message, 'err');
+    }
 }
 </script>
 </body>
