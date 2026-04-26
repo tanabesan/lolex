@@ -354,13 +354,24 @@ footer a:hover { color: var(--primary); }
 <!-- ── ナビ ── -->
 <nav>
     <a class="nav-logo" href="index.html">LOL<span>.ex</span></a>
-    <div class="nav-links">
+    <div class="nav-links" style="display:flex; align-items:center; gap:8px;">
         <a class="btn btn-ghost" href="#features">機能</a>
         <a class="btn btn-ghost" href="#install">インストール</a>
-        <a class="btn btn-ghost" href="auth.html">ログイン</a>
-        <a class="btn btn-primary" href="auth.html?mode=register">
-            <i class="fas fa-user-plus"></i> 登録
-        </a>
+        <div id="nav-guest" style="display:flex; gap:8px;">
+            <a class="btn btn-ghost" href="auth.html">ログイン</a>
+            <a class="btn btn-primary" href="auth.html?mode=register">
+                <i class="fas fa-user-plus"></i> 登録
+            </a>
+        </div>
+        <div id="nav-user" style="display:none; align-items:center; gap:10px;">
+            <div style="display:flex; align-items:center; gap:7px; background:rgba(187,134,252,0.08); border:1px solid rgba(187,134,252,0.2); border-radius:999px; padding:5px 14px; font-size:0.84rem; color:var(--primary);">
+                <i class="fas fa-user" style="font-size:0.75em;"></i>
+                <span id="nav-username">---</span>
+            </div>
+            <a class="btn btn-primary" href="dashboard.html">
+                <i class="fas fa-tachometer-alt"></i> ダッシュボード
+            </a>
+        </div>
     </div>
 </nav>
 
@@ -529,5 +540,33 @@ footer a:hover { color: var(--primary); }
     </div>
 </footer>
 
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+const firebaseConfig = {
+    apiKey:            "AIzaSyCJqqCzt_xppIt0lg3ItQfPwoR9uLWRWZI",
+    authDomain:        "lolex0204.firebaseapp.com",
+    projectId:         "lolex0204",
+    storageBucket:     "lolex0204.firebasestorage.app",
+    messagingSenderId: "940620254622",
+    appId:             "1:940620254622:web:edca80d191423cd460da8f",
+};
+firebase.initializeApp(firebaseConfig);
+firebase.auth().onAuthStateChanged(function(user) {
+    var guest = document.getElementById('nav-guest');
+    var userDiv = document.getElementById('nav-user');
+    var username = document.getElementById('nav-username');
+    if (user) {
+        if (guest)    guest.style.display    = 'none';
+        if (userDiv)  userDiv.style.display  = 'flex';
+        if (username) username.textContent   = user.displayName || user.email;
+    } else {
+        if (guest)    guest.style.display    = 'flex';
+        if (userDiv)  userDiv.style.display  = 'none';
+    }
+});
+</script>
 </body>
 </html>
