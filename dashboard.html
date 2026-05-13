@@ -456,13 +456,30 @@ COURSES.forEach(c => LOLEX_KEYS.push('stopAirMove_' + c.id));
 var _editData = {};
 var _dirty = false;
 
+// ユーザーカラーをサイトに反映
+function applyUserColors(primary, secondary) {
+    document.documentElement.style.setProperty('--primary',   primary);
+    document.documentElement.style.setProperty('--secondary', secondary);
+}
+
 // 認証チェック
-auth.onAuthStateChanged(function(user) {
+auth.onAuthStateChanged(async function(user) {
     document.getElementById('page-loading').classList.add('hidden');
     if (!user) { location.href = 'auth.html'; return; }
     document.getElementById('user-name').textContent = user.displayName || user.email;
     document.getElementById('st-email').textContent  = user.email;
     loadLastSyncTime(user.uid);
+
+    // Firebaseからカラー設定を取得して反映
+    try {
+        var snap = await db.collection('users').doc(user.uid).collection('lolex').doc('settings').get();
+        if (snap.exists) {
+            var data      = snap.data();
+            var primary   = data['lolex-primary-color']   || '#BB86FC';
+            var secondary = data['lolex-secondary-color'] || '#03DAC6';
+            applyUserColors(primary, secondary);
+        }
+    } catch(_) {}
 });
 
 async function loadLastSyncTime(uid) {

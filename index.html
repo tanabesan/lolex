@@ -544,6 +544,7 @@ footer a:hover { color: var(--primary); }
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 const firebaseConfig = {
     apiKey:            "AIzaSyCJqqCzt_xppIt0lg3ItQfPwoR9uLWRWZI",
@@ -554,17 +555,37 @@ const firebaseConfig = {
     appId:             "1:940620254622:web:edca80d191423cd460da8f",
 };
 firebase.initializeApp(firebaseConfig);
-firebase.auth().onAuthStateChanged(function(user) {
-    var guest = document.getElementById('nav-guest');
-    var userDiv = document.getElementById('nav-user');
+const db = firebase.firestore();
+
+function applyUserColors(primary, secondary) {
+    document.documentElement.style.setProperty('--primary',   primary);
+    document.documentElement.style.setProperty('--secondary', secondary);
+}
+
+firebase.auth().onAuthStateChanged(async function(user) {
+    var guest    = document.getElementById('nav-guest');
+    var userDiv  = document.getElementById('nav-user');
     var username = document.getElementById('nav-username');
     if (user) {
-        if (guest)    guest.style.display    = 'none';
-        if (userDiv)  userDiv.style.display  = 'flex';
-        if (username) username.textContent   = user.displayName || user.email;
+        if (guest)    guest.style.display   = 'none';
+        if (userDiv)  userDiv.style.display = 'flex';
+        if (username) username.textContent  = user.displayName || user.email;
+
+        // Firebaseからカラー設定を取得して反映
+        try {
+            var snap = await db.collection('users').doc(user.uid).collection('lolex').doc('settings').get();
+            if (snap.exists) {
+                var data    = snap.data();
+                var primary   = data['lolex-primary-color']   || '#BB86FC';
+                var secondary = data['lolex-secondary-color'] || '#03DAC6';
+                applyUserColors(primary, secondary);
+            }
+        } catch(_) {}
     } else {
-        if (guest)    guest.style.display    = 'flex';
-        if (userDiv)  userDiv.style.display  = 'none';
+        if (guest)    guest.style.display   = 'flex';
+        if (userDiv)  userDiv.style.display = 'none';
+        // デフォルトカラーに戻す
+        applyUserColors('#BB86FC', '#03DAC6');
     }
 });
 </script>
