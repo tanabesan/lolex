@@ -1,17 +1,17 @@
 // ==UserScript==
-// @name         LOL.ex ver0.81
+// @name         LOL.ex ver0.83
 // @namespace    http://tampermonkey.net/
-// @version      0.81
-// @description  LOLBeans extension - Fully refactored: XSS fixes, perf improvements, clean architecture
+// @version      0.83
+// @description  LOLBeans extension - Added: Best time calculator & PNG save
 // @author       ユウキ / Yuki
 // @match        https://lolbeans.io/*
 // @match        https://bean.lol/*
 // @match        https://obby.lol/*
+// @match        https://s.lolbeans.io/*
 // @grant        unsafeWindow
+// @grant        GM_xmlhttpRequest
+// @connect      s.lolbeans.io
 // @run-at       document-start
-// @require      https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js
-// @require      https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js
-// @require      https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js
 // @updateURL    https://tanabesan.github.io//lolex/extension/main.user.js
 // @downloadURL  https://tanabesan.github.io/lolex/extension/main.user.js
 // ==/UserScript==
@@ -19,22 +19,7 @@
 (function () {
     'use strict';
 
-    const SCRIPT_VERSION = '0.81';
-
-    // ▼▼▼ Firebase設定 ▼▼▼
-    const FIREBASE_CONFIG = {
-        apiKey:            "AIzaSyCJqqCzt_xppIt0lg3ItQfPwoR9uLWRWZI",
-        authDomain:        "lolex0204.firebaseapp.com",
-        projectId:         "lolex0204",
-        storageBucket:     "lolex0204.firebasestorage.app",
-        messagingSenderId: "940620254622",
-        appId:             "1:940620254622:web:edca80d191423cd460da8f",
-    };
-    // ▲▲▲ Firebase設定 ▲▲▲
-
-    // ------------------------------------------------------------------------------------------------
-    //                                  定数・設定
-    // ------------------------------------------------------------------------------------------------
+    const SCRIPT_VERSION = '0.83';
 
     const STORAGE = {
         VIDEO:          'yt-videoId',
@@ -54,8 +39,6 @@
         BAR_VISIBLE:    'yt-card-visible',
         YT_HOTKEY:      'lolex-yt-hotkey',
         FLOAT_BTN:      'lolex-yt-float-btn',
-        FB_EMAIL:       'lolex-fb-email',
-        FB_PASS:        'lolex-fb-pass',
     };
 
     const DEFAULT = {
@@ -85,82 +68,11 @@
     ].forEach(id => LOLEX_KEYS.push('stopAirMove_' + id));
 
     // ------------------------------------------------------------------------------------------------
-    //                                  Firebase 初期化
+    //  ユーティリティ
     // ------------------------------------------------------------------------------------------------
-
-    let fbApp  = null;
-    let fbAuth = null;
-    let fbDb   = null;
-
-    function initFirebase() {
-        try {
-            if (typeof firebase === 'undefined') return;
-            if (!firebase.apps.length) {
-                fbApp = firebase.initializeApp(FIREBASE_CONFIG);
-            } else {
-                fbApp = firebase.apps[0];
-            }
-            fbAuth = firebase.auth();
-            fbDb   = firebase.firestore();
-        } catch(e) {
-            console.error('[LOL.ex] Firebase init error:', e);
-        }
-    }
-
-    // ------------------------------------------------------------------------------------------------
-    //                                  Firebase 同期処理
-    // ------------------------------------------------------------------------------------------------
-
-    async function fbUpload() {
-        if (!fbAuth || !fbDb) { alert('Firebase未初期化'); return; }
-        const user = fbAuth.currentUser;
-        if (!user) { alert('ログインしてください'); return; }
-
-        const settings = { _updatedAt: firebase.firestore.FieldValue.serverTimestamp(), _version: SCRIPT_VERSION };
-        LOLEX_KEYS.forEach(key => {
-            const val = localStorage.getItem(key);
-            if (val !== null) settings[key] = val;
-        });
-
-        await fbDb.collection('users').doc(user.uid).collection('lolex').doc('settings').set(settings);
-        const count = Object.keys(settings).length - 2;
-        return count;
-    }
-
-    async function fbDownload() {
-        if (!fbAuth || !fbDb) { alert('Firebase未初期化'); return null; }
-        const user = fbAuth.currentUser;
-        if (!user) { alert('ログインしてください'); return null; }
-
-        const snap = await fbDb.collection('users').doc(user.uid).collection('lolex').doc('settings').get();
-        if (!snap.exists) return null;
-
-        const data = snap.data();
-        let count = 0;
-        LOLEX_KEYS.forEach(key => {
-            if (data[key] !== undefined) { localStorage.setItem(key, data[key]); count++; }
-        });
-        return count;
-    }
-
-    // ------------------------------------------------------------------------------------------------
-    //                                  ストレージ ユーティリティ
-    // ------------------------------------------------------------------------------------------------
-
-    const getStoredBool = (key, fallback = false) => {
-        const v = localStorage.getItem(key);
-        if (v === null) return fallback;
-        return v === 'true';
-    };
-    const setStoredBool = (key, value) => localStorage.setItem(key, String(Boolean(value)));
-    const getStoredFloat = (key, fallback = 0) => {
-        const v = parseFloat(localStorage.getItem(key));
-        return isNaN(v) ? fallback : v;
-    };
-
-    // ------------------------------------------------------------------------------------------------
-    //                                  グローバル状態
-    // ------------------------------------------------------------------------------------------------
+    const getStoredBool  = (key, fallback = false) => { const v = localStorage.getItem(key); return v === null ? fallback : v === 'true'; };
+    const setStoredBool  = (key, value) => localStorage.setItem(key, String(Boolean(value)));
+    const getStoredFloat = (key, fallback = 0) => { const v = parseFloat(localStorage.getItem(key)); return isNaN(v) ? fallback : v; };
 
     let player           = null;
     let isApiReady       = false;
@@ -171,9 +83,8 @@
     let _cachedLang      = null;
 
     // ------------------------------------------------------------------------------------------------
-    //                                  コースデータ
+    //  コースデータ
     // ------------------------------------------------------------------------------------------------
-
     const COURSES = [
         { id: 'beacon-bay',    keyword: 'BeaconBay',          message: '🚨 Beacon Bay 🚨',         displayName: 'Beacon Bay' },
         { id: 'boulder-hill',  keyword: 'BoulderHill',        message: '🐛 Boulder Hill 🐛',       displayName: 'Boulder Hill' },
@@ -204,15 +115,14 @@
     ];
 
     // ------------------------------------------------------------------------------------------------
-    //                                  言語辞書
+    //  言語辞書
     // ------------------------------------------------------------------------------------------------
-
     const LANG_DATA = {
         ja: {
             tabTitle:            `LOL.ex v${SCRIPT_VERSION}`,
             discordInvite:       'Discordサーバーに参加する',
             latestUpdates:       '最新アップデート情報',
-            updateInfo:          '・全体的なリファクタリングを実施しました。<br>・XSSリスクを修正しました。<br>・パフォーマンスと安定性を向上させました。<br>・背景編集UIをモーダルに変更しました。',
+            updateInfo:          '・ベストタイム計算機能を追加しました。<br>・サムネイル付きタイム一覧のPNG保存機能を追加しました。<br>・全体的な安定性を向上させました。',
             language:            '言語',
             airMoveAutoSwitch:   'Air Move 自動切り替え全体制御',
             enableAutoSwitch:    'Air Move 自動切り替え機能を有効化',
@@ -258,29 +168,21 @@
             ytNoTrack:           '--- 未読込 ---',
             ytVolume:            '音量',
             nextRound:           'Next Round...',
-            // Firebase同期
-            fbSync:              'クラウド設定同期 (Firebase)',
-            fbEmail:             'メールアドレス',
-            fbPassword:          'パスワード',
-            fbLogin:             'ログイン',
-            fbLogout:            'ログアウト',
-            fbUpload:            '☁️ クラウドへ保存',
-            fbDownload:          '⬇️ クラウドから復元',
-            fbLoginRequired:     'ログインが必要です',
-            fbUploading:         'アップロード中...',
-            fbDownloading:       'ダウンロード中...',
-            fbUploadDone:        '✅ 保存完了！',
-            fbDownloadDone:      '✅ 復元完了！ページをリロードしてください',
-            fbError:             '❌ エラー: ',
-            fbLoggedIn:          'ログイン中: ',
-            fbNoData:            'クラウドにデータがありません',
-            fbNote:              'ここでログイン・保存すると lolbeans.io の設定がFirebaseに保存されます。別デバイスでも同じ設定で遊べます！',
+            bestTimes:           'ベストタイム計算',
+            bestTimesCalc:       'タイムを計算',
+            bestTimesSave:       '保存',
+            bestTimesTotal:      '合計タイム',
+            bestTimesLoading:    '取得中...',
+            bestTimesError:      '取得エラー',
+            bestTimesNoSession:  'sessionID不明',
+            bestTimesSaving:     '生成中...',
+            bestTimesNote:       'APIからベストタイムを取得して合計を計算します。同名コースは最速タイムのみ使用。',
         },
         en: {
             tabTitle:            `LOL.ex v${SCRIPT_VERSION}`,
             discordInvite:       'Join Discord Server',
             latestUpdates:       'Latest Updates',
-            updateInfo:          '・Full refactoring implemented.<br>・XSS risk fixed.<br>・Improved performance and stability.<br>・Changed background editing UI to a modal window.',
+            updateInfo:          '・Added best time calculator feature.<br>・Added PNG save for time list with thumbnails.<br>・Improved overall stability.',
             language:            'Language',
             airMoveAutoSwitch:   'Air Move Auto Switch Control',
             enableAutoSwitch:    'Enable Air Move Auto Switch',
@@ -326,29 +228,21 @@
             ytNoTrack:           '--- No Track ---',
             ytVolume:            'Volume',
             nextRound:           'Next Round...',
-            fbSync:              'Cloud Sync (Firebase)',
-            fbEmail:             'Email',
-            fbPassword:          'Password',
-            fbLogin:             'Login',
-            fbLogout:            'Logout',
-            fbUpload:            '☁️ Save to Cloud',
-            fbDownload:          '⬇️ Restore from Cloud',
-            fbLoginRequired:     'Please login first',
-            fbUploading:         'Uploading...',
-            fbDownloading:       'Downloading...',
-            fbUploadDone:        '✅ Saved!',
-            fbDownloadDone:      '✅ Restored! Please reload the page',
-            fbError:             '❌ Error: ',
-            fbLoggedIn:          'Logged in: ',
-            fbNoData:            'No data in cloud',
-            fbNote:              'Login here to save lolbeans.io settings to Firebase. Play with the same settings on any device!',
+            bestTimes:           'Best Times',
+            bestTimesCalc:       'Calc Times',
+            bestTimesSave:       'Save',
+            bestTimesTotal:      'Total',
+            bestTimesLoading:    'Loading...',
+            bestTimesError:      'Fetch Error',
+            bestTimesNoSession:  'Session not found',
+            bestTimesSaving:     'Generating...',
+            bestTimesNote:       'Fetches best times from API. For duplicate courses, only the fastest time is used.',
         },
     };
 
-    // ================================================================
-    //  ミニ DOM ユーティリティ
-    // ================================================================
-
+    // ----------------------------------------------------------------
+    //  DOM ユーティリティ
+    // ----------------------------------------------------------------
     function el(tag, props = {}, style = {}) {
         const e = document.createElement(tag);
         Object.assign(e, props);
@@ -362,23 +256,16 @@
     function append(parent, ...children) { children.forEach(c => parent.appendChild(c)); }
     const $ = id => document.getElementById(id);
 
-    function getLang() {
-        if (!_cachedLang) _cachedLang = localStorage.getItem(STORAGE.LANGUAGE) || 'ja';
-        return _cachedLang;
-    }
+    function getLang() { if (!_cachedLang) _cachedLang = localStorage.getItem(STORAGE.LANGUAGE) || 'ja'; return _cachedLang; }
     function invalidateLangCache() { _cachedLang = null; }
-    function t(key) {
-        const lang = getLang();
-        return (LANG_DATA[lang] && LANG_DATA[lang][key]) || LANG_DATA['ja'][key] || `[${key}]`;
-    }
+    function t(key) { const lang = getLang(); return (LANG_DATA[lang] && LANG_DATA[lang][key]) || LANG_DATA['ja'][key] || `[${key}]`; }
 
     const getPrimaryColor   = () => localStorage.getItem(STORAGE.PRIMARY_COLOR)   || DEFAULT.PRIMARY;
     const getSecondaryColor = () => localStorage.getItem(STORAGE.SECONDARY_COLOR) || DEFAULT.SECONDARY;
 
     function applyColorTheme(primary, secondary) {
-        const root = document.documentElement.style;
-        root.setProperty('--primary-color',   primary);
-        root.setProperty('--secondary-color', secondary);
+        document.documentElement.style.setProperty('--primary-color',   primary);
+        document.documentElement.style.setProperty('--secondary-color', secondary);
         applySiteTheme(primary, secondary);
     }
 
@@ -397,6 +284,7 @@
             html body .primary-btn:hover { background-color: rgba(255,255,255,0.90) !important; border-color: ${secondary} !important; }
             html body .secondary-btn { background-color: rgba(255,255,255,0.62) !important; color: #1a1a1a !important; border: 1px solid ${alpha(secondary, 0.4)} !important; }
             .scoreboard .score-rows-wrapper .row.local-player { background: rgba(0,0,0,0.88) !important; border-left: 3px solid ${primary} !important; }
+            .scoreboard .score-rows-wrapper .row.local-player * { color: #ffffff !important; }
             ::-webkit-scrollbar-thumb { background: ${alpha(secondary, 0.45)} !important; border-radius: 4px; }
             ::-webkit-scrollbar-thumb:hover { background: ${secondary} !important; }
         `;
@@ -404,10 +292,7 @@
 
     function saveTime() {
         if (!player) return;
-        try {
-            const time = player.getCurrentTime?.();
-            if (typeof time === 'number' && !isNaN(time)) { localStorage.setItem(STORAGE.TIME, time); lastTime = time; }
-        } catch (_) {}
+        try { const time = player.getCurrentTime?.(); if (typeof time === 'number' && !isNaN(time)) { localStorage.setItem(STORAGE.TIME, time); lastTime = time; } } catch (_) {}
     }
 
     function onPlayerReady(event) {
@@ -423,28 +308,19 @@
     }
 
     function onPlayerStateChange(event) {
-        clearInterval(saveTimeInterval);
-        saveTimeInterval = null;
+        clearInterval(saveTimeInterval); saveTimeInterval = null;
         try {
-            if (event.data === unsafeWindow.YT.PlayerState.PLAYING) {
-                saveTimeInterval = setInterval(saveTime, 2000);
-                updateBarTitle();
-                updateBarPlayButton(true);
-            } else if (event.data === unsafeWindow.YT.PlayerState.PAUSED) {
-                updateBarPlayButton(false);
-            } else if (event.data === unsafeWindow.YT.PlayerState.ENDED) {
-                saveTime();
-                updateBarPlayButton(false);
-            }
+            if (event.data === unsafeWindow.YT.PlayerState.PLAYING) { saveTimeInterval = setInterval(saveTime, 2000); updateBarTitle(); updateBarPlayButton(true); }
+            else if (event.data === unsafeWindow.YT.PlayerState.PAUSED) { updateBarPlayButton(false); }
+            else if (event.data === unsafeWindow.YT.PlayerState.ENDED) { saveTime(); updateBarPlayButton(false); }
         } catch (e) { console.error('[LOL.ex] onPlayerStateChange error:', e); }
     }
 
     function updateBarTitle() {
         if (!player) return;
         try {
-            const data  = player.getVideoData?.() || {};
-            const title = data.title   || '';
-            const vidId = data.video_id || '';
+            const data = player.getVideoData?.() || {};
+            const title = data.title || '', vidId = data.video_id || '';
             const titleEl = $('yt-card-title');
             if (titleEl) titleEl.textContent = title || t('ytNoTrack');
             const bg = $('yt-card');
@@ -454,7 +330,7 @@
     }
 
     function updateBarPlayButton(isPlaying) {
-        const btn = document.getElementById('yt-card-play');
+        const btn = $('yt-card-play');
         if (btn) btn.textContent = isPlaying ? '⏸' : '▶';
         if (isPlaying) startEqAnimation(); else stopEqAnimation();
     }
@@ -467,16 +343,11 @@
     function startEqAnimation() {
         if (_eqAnimId) return;
         function frame(ts) {
-            if (ts > _eqNextChange) {
-                for (let i = 0; i < EQ_COLS; i++) _eqTargets[i] = 1 + Math.random() * (EQ_SEGS - 1);
-                _eqNextChange = ts + 80 + Math.random() * 120;
-            }
+            if (ts > _eqNextChange) { for (let i = 0; i < EQ_COLS; i++) _eqTargets[i] = 1 + Math.random() * (EQ_SEGS - 1); _eqNextChange = ts + 80 + Math.random() * 120; }
             for (let i = 0; i < EQ_COLS; i++) _eqCurrents[i] += (_eqTargets[i] - _eqCurrents[i]) * 0.22;
             document.querySelectorAll('.yt-eq-col').forEach((col, ci) => {
                 const activeCount = Math.round(_eqCurrents[ci]);
-                col.querySelectorAll('.yt-eq-seg').forEach((seg, si) => {
-                    seg.style.opacity = (EQ_SEGS - 1 - si) < activeCount ? '1' : '0';
-                });
+                col.querySelectorAll('.yt-eq-seg').forEach((seg, si) => { seg.style.opacity = (EQ_SEGS - 1 - si) < activeCount ? '1' : '0'; });
             });
             _eqAnimId = requestAnimationFrame(frame);
         }
@@ -485,9 +356,7 @@
 
     function stopEqAnimation() {
         if (_eqAnimId) { cancelAnimationFrame(_eqAnimId); _eqAnimId = null; }
-        document.querySelectorAll('.yt-eq-col').forEach(col => {
-            col.querySelectorAll('.yt-eq-seg').forEach((seg, si) => { seg.style.opacity = si === EQ_SEGS - 1 ? '0.15' : '0'; });
-        });
+        document.querySelectorAll('.yt-eq-col').forEach(col => { col.querySelectorAll('.yt-eq-seg').forEach((seg, si) => { seg.style.opacity = si === EQ_SEGS - 1 ? '0.15' : '0'; }); });
     }
 
     function clickAirMoveRadio(enabled) {
@@ -544,10 +413,7 @@
             if (existing) existing.remove();
             const list = getBackgroundList();
             let imageUrl = localStorage.getItem(STORAGE.BACKGROUND);
-            if (forceRandom || !imageUrl) {
-                imageUrl = list[Math.floor(Math.random() * list.length)];
-                localStorage.setItem(STORAGE.BACKGROUND, imageUrl);
-            }
+            if (forceRandom || !imageUrl) { imageUrl = list[Math.floor(Math.random() * list.length)]; localStorage.setItem(STORAGE.BACKGROUND, imageUrl); }
             if (!imageUrl || !/^https?:\/\//.test(imageUrl)) return;
             const escapedUrl = imageUrl.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
             const style = document.createElement('style');
@@ -568,7 +434,7 @@
     function updateCourseLabels(targetId = null) {
         const targets = targetId ? COURSES.filter(c => c.id === targetId) : COURSES;
         targets.forEach(({ id, displayName }) => {
-            const enabled  = getStoredBool(`stopAirMove_${id}`);
+            const enabled = getStoredBool(`stopAirMove_${id}`);
             const checkbox = document.getElementById(`courseAirMoveToggle_${id}`);
             if (!checkbox) return;
             const row = checkbox.closest('.lolex-setting-row');
@@ -576,23 +442,178 @@
             const labelEl = row.querySelector('.setting-name');
             if (!labelEl) return;
             labelEl.innerHTML = '';
-            const icon  = document.createElement('i');
-            icon.className = 'fas fa-bolt';
-            const name  = document.createTextNode(displayName);
+            const icon = document.createElement('i'); icon.className = 'fas fa-bolt';
+            const name = document.createTextNode(displayName);
             const badge = document.createElement('span');
-            badge.style.cssText = `margin-left:6px; padding:1px 5px; border-radius:3px; font-size:0.72em; font-weight:700; background:${enabled ? 'rgba(3,218,198,0.15)' : 'rgba(187,134,252,0.12)'}; color:${enabled ? 'var(--secondary-color)' : 'var(--col-muted)'}; border:1px solid ${enabled ? 'rgba(3,218,198,0.3)' : 'rgba(255,255,255,0.08)'};`;
+            badge.style.cssText = `margin-left:6px;padding:1px 5px;border-radius:3px;font-size:0.72em;font-weight:700;background:${enabled ? 'rgba(3,218,198,0.15)' : 'rgba(187,134,252,0.12)'};color:${enabled ? 'var(--secondary-color)' : 'var(--col-muted)'};border:1px solid ${enabled ? 'rgba(3,218,198,0.3)' : 'rgba(255,255,255,0.08)'};`;
             badge.textContent = enabled ? t('on') : t('off');
-            labelEl.appendChild(icon);
-            labelEl.appendChild(name);
-            labelEl.appendChild(badge);
+            labelEl.appendChild(icon); labelEl.appendChild(name); labelEl.appendChild(badge);
         });
     }
 
+    // ------------------------------------------------------------------------------------------------
+    //  ★ ベストタイム機能
+    // ------------------------------------------------------------------------------------------------
+    function getSessionId() {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.toLowerCase().includes('session')) return localStorage.getItem(key);
+        }
+        for (let i = 0; i < localStorage.length; i++) {
+            const val = localStorage.getItem(localStorage.key(i));
+            if (val && /^[a-zA-Z0-9_\-]{20,}$/.test(val)) return val;
+        }
+        return null;
+    }
+
+    function normalizeMap(mapStr) { return mapStr.replace(/-v[\d.]+$/i, '').toLowerCase(); }
+
+    function getBestTimes(records) {
+        const best = {};
+        for (const r of records) {
+            const key = normalizeMap(r.map);
+            if (!(key in best) || r.time < best[key].time) best[key] = { time: r.time };
+        }
+        return best;
+    }
+
+    function loadImage(src) {
+        return new Promise(resolve => {
+            const img = new Image(); img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img); img.onerror = () => resolve(null);
+            img.src = src;
+        });
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+    }
+
+    function collectThumbnails() {
+        return Array.from(document.querySelectorAll('#best-times-wrapper .map-thumbnail')).map(el => {
+            const style = el.style.backgroundImage;
+            const match = style.match(/url\(["']?(.+?)["']?\)/);
+            return {
+                imgSrc: match ? new URL(match[1], location.href).href : null,
+                name: el.querySelector('.map-name')?.textContent.trim() || '',
+                time: el.querySelector('.record')?.textContent.trim() || '',
+            };
+        });
+    }
+
+    async function saveTimesAsImage() {
+        const saveBtn = $('lb-save-btn');
+        if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = t('bestTimesSaving'); }
+
+        const thumbs = collectThumbnails();
+        const COLS = 4, CARD_W = 200, CARD_H = 130, THUMB_H = 90, PAD = 12, HEADER_H = 60, FOOTER_H = 50;
+        const ROWS = Math.ceil(thumbs.length / COLS);
+        const W = COLS * CARD_W + (COLS + 1) * PAD;
+        const H = HEADER_H + ROWS * (CARD_H + PAD) + PAD + FOOTER_H;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext('2d');
+
+        ctx.fillStyle = '#1e293b'; ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#f97316'; ctx.fillRect(0, 0, W, HEADER_H);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('🏆 LolBeans Best Times', W / 2, 38);
+
+        const totalText = $('lb-total-display')?.textContent || '';
+        ctx.fillStyle = '#0f172a'; ctx.fillRect(0, H - FOOTER_H, W, FOOTER_H);
+        ctx.fillStyle = '#4ade80'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(totalText || '---', W / 2, H - 16);
+
+        const images = await Promise.all(thumbs.map(t => t.imgSrc ? loadImage(t.imgSrc) : Promise.resolve(null)));
+
+        thumbs.forEach((thumb, i) => {
+            const col = i % COLS, row = Math.floor(i / COLS);
+            const x = PAD + col * (CARD_W + PAD), y = HEADER_H + PAD + row * (CARD_H + PAD);
+            ctx.fillStyle = '#334155'; roundRect(ctx, x, y, CARD_W, CARD_H, 8); ctx.fill();
+            const img = images[i];
+            if (img) {
+                ctx.save(); roundRect(ctx, x, y, CARD_W, THUMB_H, 8); ctx.clip();
+                const scale = Math.max(CARD_W / img.width, THUMB_H / img.height);
+                ctx.drawImage(img, x + (CARD_W - img.width * scale) / 2, y + (THUMB_H - img.height * scale) / 2, img.width * scale, img.height * scale);
+                ctx.restore();
+            } else {
+                ctx.fillStyle = '#475569'; ctx.fillRect(x, y, CARD_W, THUMB_H);
+            }
+            ctx.fillStyle = 'rgba(15,23,42,0.85)'; ctx.fillRect(x, y + THUMB_H, CARD_W, CARD_H - THUMB_H);
+            ctx.fillStyle = '#e2e8f0'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText(thumb.name, x + CARD_W / 2, y + THUMB_H + 16, CARD_W - 8);
+            ctx.fillStyle = '#fbbf24'; ctx.font = '13px monospace';
+            ctx.fillText(thumb.time, x + CARD_W / 2, y + THUMB_H + 34, CARD_W - 8);
+        });
+
+        const link = document.createElement('a');
+        link.download = 'lolbeans-best-times.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = t('bestTimesSave'); }
+    }
+
+    function fetchBestTimes() {
+        const calcBtn   = $('lb-calc-btn');
+        const resultDiv = $('lb-total-display');
+        const sessionId = getSessionId();
+
+        if (!sessionId) {
+            if (resultDiv) { resultDiv.textContent = t('bestTimesNoSession'); resultDiv.style.color = '#f87171'; }
+            return;
+        }
+
+        if (calcBtn) { calcBtn.disabled = true; calcBtn.textContent = t('bestTimesLoading'); }
+        if (resultDiv) { resultDiv.textContent = t('bestTimesLoading'); resultDiv.style.color = '#94a3b8'; }
+
+        GM_xmlhttpRequest({
+            method: 'GET',
+            url: `https://s.lolbeans.io/my-stats?s=${encodeURIComponent(sessionId)}`,
+            onload: (res) => {
+                if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = t('bestTimesCalc'); }
+                if (res.status !== 200) {
+                    if (resultDiv) { resultDiv.textContent = `${t('bestTimesError')} HTTP ${res.status}`; resultDiv.style.color = '#f87171'; }
+                    return;
+                }
+                let json;
+                try { json = JSON.parse(res.responseText); } catch {
+                    if (resultDiv) { resultDiv.textContent = t('bestTimesError'); resultDiv.style.color = '#f87171'; }
+                    return;
+                }
+                if (!json.records || !Array.isArray(json.records)) {
+                    if (resultDiv) { resultDiv.textContent = t('bestTimesError'); resultDiv.style.color = '#f87171'; }
+                    return;
+                }
+                const best  = getBestTimes(json.records);
+                const total = Object.values(best).reduce((s, d) => s + d.time, 0);
+                const count = Object.keys(best).length;
+                if (resultDiv) {
+                    resultDiv.textContent = `${t('bestTimesTotal')}: ${total.toFixed(3)}s（${count} maps）`;
+                    resultDiv.style.color = '#4ade80';
+                }
+            },
+            onerror: () => {
+                if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = t('bestTimesCalc'); }
+                if (resultDiv) { resultDiv.textContent = t('bestTimesError'); resultDiv.style.color = '#f87171'; }
+            },
+        });
+    }
+
+    // ------------------------------------------------------------------------------------------------
+    //  スタイルシート
+    // ------------------------------------------------------------------------------------------------
     function addModernStyleSheet() {
         applyColorTheme(getPrimaryColor(), getSecondaryColor());
         if (document.getElementById('lolex-modern-style')) return;
         const style = document.createElement('style');
-        style.id    = 'lolex-modern-style';
+        style.id = 'lolex-modern-style';
         style.textContent = `
             #tab5:checked ~ nav + section > .tab5 { display: block !important; }
             .pc-tab section > .tab5 { display: none; }
@@ -618,7 +639,7 @@
             .lolex-setting-row:last-child { border-bottom: none; }
             .lolex-setting-row .setting-name { display: flex; align-items: center; gap: 7px; font-size: 0.86em; color: var(--col-text); font-weight: 500; flex-grow: 1; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .lolex-setting-row .setting-name i { color: var(--primary-color); font-size: 0.88em; flex-shrink: 0; }
-            .lolex-setting-row select, .lolex-setting-row input[type="text"], .lolex-setting-row input[type="email"], .lolex-setting-row input[type="password"] { padding: 4px 8px; border: 1px solid var(--col-border); border-radius: 4px; background: var(--input-bg); color: var(--col-text); font-size: 0.84em; transition: border-color 0.2s; box-sizing: border-box; flex-shrink: 0; }
+            .lolex-setting-row select, .lolex-setting-row input[type="text"] { padding: 4px 8px; border: 1px solid var(--col-border); border-radius: 4px; background: var(--input-bg); color: var(--col-text); font-size: 0.84em; transition: border-color 0.2s; box-sizing: border-box; flex-shrink: 0; }
             .lolex-setting-row select { min-width: 120px; }
             .lolex-setting-row input[type="color"] { -webkit-appearance: none; appearance: none; width: 28px; height: 28px; padding: 0; border: none; background: none; cursor: pointer; flex-shrink: 0; }
             .lolex-setting-row input[type="color"]::-webkit-color-swatch { border: 2px solid var(--col-border); border-radius: 4px; }
@@ -643,8 +664,8 @@
             .lolex-btn-group button.muted { background: #23232f; color: var(--col-text); border: 1px solid var(--col-border); }
             .lolex-btn-group button.accent { background: var(--secondary-color); color: #0d0d14; }
             .lolex-btn-group button.danger { background: #2a1212; color: #ff7070; border: 1px solid #4a2020; }
-            .lolex-fb-status { font-size: 0.80em; color: var(--secondary-color); padding: 4px 10px 6px; }
-            .lolex-fb-result { font-size: 0.80em; padding: 4px 10px; min-height: 20px; }
+            .lolex-btn-group button:disabled { opacity: 0.55; cursor: default; }
+            .lb-total-display { font-size: 0.88em; font-weight: 700; padding: 6px 10px 4px; min-height: 22px; }
             .tab5 h3, .tab5 .setting-section, .tab5 .youtube-container, .tab5 .youtube-input-group, .tab5 .setting-row { display: none !important; }
             .tab5 .lolex-settings { display: block !important; }
         `;
@@ -654,7 +675,7 @@
     function addYouTubeStyleSheet() {
         if (document.getElementById('lolex-yt-style')) return;
         const style = document.createElement('style');
-        style.id    = 'lolex-yt-style';
+        style.id = 'lolex-yt-style';
         style.textContent = `
             #yt-hidden-player { position: fixed; width: 1px; height: 1px; bottom: 0; left: 0; opacity: 0; pointer-events: none; z-index: -1; }
             #yt-card { position: fixed; bottom: -240px; right: 18px; width: 200px; height: 200px; border-radius: 12px; overflow: hidden; z-index: 9999; background: #0d0d14 center/cover no-repeat; border: 1.5px solid var(--primary-color, #BB86FC); box-shadow: 0 8px 32px rgba(0,0,0,0.7); cursor: default; transition: bottom 0.38s cubic-bezier(.4,0,.2,1); user-select: none; }
@@ -683,10 +704,12 @@
         document.head.appendChild(style);
     }
 
+    // ------------------------------------------------------------------------------------------------
+    //  YouTube UI
+    // ------------------------------------------------------------------------------------------------
     function initYouTubePlayerUI() {
         if ($('yt-card')) return;
-        addYouTubeStyleSheet();
-        addModernStyleSheet();
+        addYouTubeStyleSheet(); addModernStyleSheet();
         const isVisible = getStoredBool(STORAGE.BAR_VISIBLE, true);
         const volume    = parseInt(localStorage.getItem(STORAGE.VOLUME) ?? '80', 10);
         const hiddenDiv = el('div', { id: 'yt-hidden-player', innerHTML: '<div id="yt-player"></div>' });
@@ -699,15 +722,11 @@
         const eqRow = el('div', { id: 'yt-eq-row' });
         for (let ci = 0; ci < EQ_COLS; ci++) {
             const col = el('div', { className: 'yt-eq-col' });
-            for (let si = 0; si < EQ_SEGS; si++) {
-                const seg = el('div', { className: 'yt-eq-seg' }, { opacity: '0' });
-                seg.dataset.level = String(si);
-                col.appendChild(seg);
-            }
+            for (let si = 0; si < EQ_SEGS; si++) { const seg = el('div', { className: 'yt-eq-seg' }, { opacity: '0' }); seg.dataset.level = String(si); col.appendChild(seg); }
             eqRow.appendChild(col);
         }
         overlay.appendChild(eqRow);
-        const titleEl  = el('div', { id: 'yt-card-title', textContent: t('ytNoTrack') });
+        const titleEl = el('div', { id: 'yt-card-title', textContent: t('ytNoTrack') });
         const controls = el('div', { id: 'yt-card-controls' });
         append(overlay, titleEl, controls);
         append(controls,
@@ -717,12 +736,8 @@
             el('input',  { type: 'range', id: 'yt-card-volume', min: '0', max: '100', value: String(volume) }),
             el('button', { className: 'yt-card-btn', id: 'yt-bar-url-toggle', textContent: '🔗' })
         );
-        const urlPanel = el('div', { id: 'yt-url-panel' });
-        urlPanel.classList.add('yt-url-hidden');
-        append(urlPanel,
-            el('input',  { type: 'text', id: 'yt-video-id-input', placeholder: t('ytInputPlaceholder') }),
-            el('button', { id: 'yt-load-button', textContent: t('ytLoadButton') })
-        );
+        const urlPanel = el('div', { id: 'yt-url-panel' }); urlPanel.classList.add('yt-url-hidden');
+        append(urlPanel, el('input', { type: 'text', id: 'yt-video-id-input', placeholder: t('ytInputPlaceholder') }), el('button', { id: 'yt-load-button', textContent: t('ytLoadButton') }));
         document.body.appendChild(urlPanel);
         const floatBtn = el('button', { id: 'yt-float-btn', textContent: '🎵' });
         document.body.appendChild(floatBtn);
@@ -732,8 +747,7 @@
         unsafeWindow.onYouTubeIframeAPIReady = function () {
             isApiReady = true;
             player = new unsafeWindow.YT.Player('yt-player', {
-                height: '1', width: '1',
-                videoId: currentVideoId || '',
+                height: '1', width: '1', videoId: currentVideoId || '',
                 playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, modestbranding: 1, rel: 0 },
                 events: { onReady: onPlayerReady, onStateChange: onPlayerStateChange },
             });
@@ -744,41 +758,30 @@
 
     function bindYouTubeEventListeners() {
         const hideUrl = () => $('yt-url-panel')?.classList.add('yt-url-hidden');
-        on($('yt-card-play'), { click: () => {
-            if (!player) return;
-            try { player.getPlayerState() === unsafeWindow.YT.PlayerState.PLAYING ? player.pauseVideo() : player.playVideo(); } catch (_) {}
-        }});
-        on($('yt-bar-prev'), { click: () => { try { player?.previousVideo?.(); } catch (_) {} }});
-        on($('yt-bar-next'), { click: () => { try { player?.nextVideo?.();     } catch (_) {} }});
-        on($('yt-card-volume'), { input: e => {
-            const vol = parseInt(e.target.value, 10);
-            localStorage.setItem(STORAGE.VOLUME, vol);
-            try { player?.setVolume?.(vol); } catch (_) {}
-        }});
+        on($('yt-card-play'),      { click: () => { if (!player) return; try { player.getPlayerState() === unsafeWindow.YT.PlayerState.PLAYING ? player.pauseVideo() : player.playVideo(); } catch (_) {} }});
+        on($('yt-bar-prev'),       { click: () => { try { player?.previousVideo?.(); } catch (_) {} }});
+        on($('yt-bar-next'),       { click: () => { try { player?.nextVideo?.();     } catch (_) {} }});
+        on($('yt-card-volume'),    { input: e => { const vol = parseInt(e.target.value, 10); localStorage.setItem(STORAGE.VOLUME, vol); try { player?.setVolume?.(vol); } catch (_) {} }});
         on($('yt-bar-url-toggle'), { click: () => {
-            const panel = $('yt-url-panel');
-            if (!panel) return;
+            const panel = $('yt-url-panel'); if (!panel) return;
             const card = $('yt-card');
             if (card && !card.classList.contains('yt-card-visible')) { card.classList.add('yt-card-visible'); setStoredBool(STORAGE.BAR_VISIBLE, true); }
             const isNowHidden = panel.classList.toggle('yt-url-hidden');
             if (!isNowHidden) setTimeout(() => $('yt-video-id-input')?.focus(), 50);
         }});
-        on($('yt-load-button'), { click: () => { loadYouTube($('yt-video-id-input')?.value || ''); hideUrl(); }});
-        on($('yt-video-id-input'), { keydown: e => {
-            if (e.key === 'Enter')  { loadYouTube(e.target.value); hideUrl(); }
-            if (e.key === 'Escape') { hideUrl(); }
-            e.stopPropagation();
-        }});
+        on($('yt-load-button'),    { click: () => { loadYouTube($('yt-video-id-input')?.value || ''); hideUrl(); }});
+        on($('yt-video-id-input'), { keydown: e => { if (e.key === 'Enter') { loadYouTube(e.target.value); hideUrl(); } if (e.key === 'Escape') hideUrl(); e.stopPropagation(); }});
     }
 
+    // ------------------------------------------------------------------------------------------------
+    //  背景モーダル
+    // ------------------------------------------------------------------------------------------------
     function createBackgroundModal() {
         if (document.getElementById('lolex-bg-modal')) return;
-        const overlay = document.createElement('div');
-        overlay.id    = 'lolex-bg-modal-overlay';
+        const overlay = document.createElement('div'); overlay.id = 'lolex-bg-modal-overlay';
         overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:10000;display:none;';
         document.body.appendChild(overlay);
-        const modal = document.createElement('div');
-        modal.id    = 'lolex-bg-modal';
+        const modal = document.createElement('div'); modal.id = 'lolex-bg-modal';
         modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:90%;max-width:560px;height:76vh;max-height:660px;background:var(--col-surface);color:var(--col-text);border:1px solid var(--primary-color);border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,0.65);z-index:10001;display:none;flex-direction:column;';
         modal.innerHTML = `
             <div style="padding:9px 13px;border-bottom:1px solid var(--col-border);display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.25);flex-shrink:0;">
@@ -796,59 +799,41 @@
         `;
         document.body.appendChild(modal);
         on(overlay, { click: hideBackgroundModal });
-        on($('lolex-bg-modal-close'),  { click: hideBackgroundModal });
-        on($('lolex-bg-save-button'),  { click: () => { saveBackgroundListFromModal(); hideBackgroundModal(); }});
-        on($('lolex-bg-add-button'),   { click: addBgItem });
-        on($('lolex-bg-new-url'), { keydown: e => { if (e.key === 'Enter') { addBgItem(); e.preventDefault(); } e.stopPropagation(); }});
+        on($('lolex-bg-modal-close'), { click: hideBackgroundModal });
+        on($('lolex-bg-save-button'), { click: () => { saveBackgroundListFromModal(); hideBackgroundModal(); }});
+        on($('lolex-bg-add-button'),  { click: addBgItem });
+        on($('lolex-bg-new-url'),     { keydown: e => { if (e.key === 'Enter') { addBgItem(); e.preventDefault(); } e.stopPropagation(); }});
     }
 
     function addBgItem() {
-        const inp  = $('lolex-bg-new-url');
-        const url  = inp?.value.trim();
+        const inp = $('lolex-bg-new-url'), url = inp?.value.trim();
         if (!url) return;
         const body = $('lolex-bg-modal-body');
         const existing = Array.from(body.querySelectorAll('.lolex-bg-item')).map(e => e.dataset.url);
-        if (!existing.includes(url)) {
-            existing.push(url);
-            localStorage.setItem(STORAGE.BG_LIST, existing.join('\n'));
-            renderBackgroundList();
-            body.scrollTop = body.scrollHeight;
-        }
+        if (!existing.includes(url)) { existing.push(url); localStorage.setItem(STORAGE.BG_LIST, existing.join('\n')); renderBackgroundList(); body.scrollTop = body.scrollHeight; }
         inp.value = '';
     }
 
     function renderBackgroundList() {
-        const body = $('lolex-bg-modal-body');
-        if (!body) return;
+        const body = $('lolex-bg-modal-body'); if (!body) return;
         body.innerHTML = '';
         getBackgroundList().forEach(url => {
-            const item = document.createElement('div');
-            item.className = 'lolex-bg-item';
-            item.dataset.url = url;
+            const item = document.createElement('div'); item.className = 'lolex-bg-item'; item.dataset.url = url;
             item.style.cssText = 'display:flex;align-items:center;gap:7px;padding:5px 7px;border:1px solid var(--col-border);border-radius:4px;margin-bottom:5px;background:rgba(0,0,0,0.2);';
-            const preview = document.createElement('div');
-            preview.style.cssText = 'width:60px;height:38px;flex-shrink:0;border-radius:3px;background:#000;overflow:hidden;';
-            const img = document.createElement('img');
-            img.src = url; img.alt = ''; img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
-            preview.appendChild(img);
-            const urlSpan = document.createElement('span');
-            urlSpan.style.cssText = 'flex-grow:1;word-break:break-all;font-size:0.74em;color:var(--col-sub);max-height:34px;overflow:hidden;';
-            urlSpan.textContent = url;
-            const delBtn = document.createElement('button');
-            delBtn.style.cssText = 'background:rgba(180,0,30,0.65);color:#fff;border:none;border-radius:50%;width:20px;height:20px;flex-shrink:0;cursor:pointer;font-size:0.82em;line-height:20px;text-align:center;';
-            delBtn.textContent = '×';
-            delBtn.addEventListener('click', () => item.remove());
-            item.appendChild(preview); item.appendChild(urlSpan); item.appendChild(delBtn);
-            body.appendChild(item);
+            const preview = document.createElement('div'); preview.style.cssText = 'width:60px;height:38px;flex-shrink:0;border-radius:3px;background:#000;overflow:hidden;';
+            const img = document.createElement('img'); img.src = url; img.alt = ''; img.style.cssText = 'width:100%;height:100%;object-fit:cover;'; preview.appendChild(img);
+            const urlSpan = document.createElement('span'); urlSpan.style.cssText = 'flex-grow:1;word-break:break-all;font-size:0.74em;color:var(--col-sub);max-height:34px;overflow:hidden;'; urlSpan.textContent = url;
+            const delBtn = document.createElement('button'); delBtn.style.cssText = 'background:rgba(180,0,30,0.65);color:#fff;border:none;border-radius:50%;width:20px;height:20px;flex-shrink:0;cursor:pointer;font-size:0.82em;line-height:20px;text-align:center;'; delBtn.textContent = '×'; delBtn.addEventListener('click', () => item.remove());
+            item.appendChild(preview); item.appendChild(urlSpan); item.appendChild(delBtn); body.appendChild(item);
         });
     }
 
     function showBackgroundModal() {
         if (!$('lolex-bg-modal')) createBackgroundModal();
         const title = $('lolex-bg-modal-title'), newUrl = $('lolex-bg-new-url'), addBtn = $('lolex-bg-add-button'), saveBtn = $('lolex-bg-save-button');
-        if (title) title.textContent  = t('modalTitle');
-        if (newUrl) newUrl.placeholder = t('addUrl');
-        if (addBtn) addBtn.textContent = t('add');
+        if (title) title.textContent   = t('modalTitle');
+        if (newUrl) newUrl.placeholder  = t('addUrl');
+        if (addBtn) addBtn.textContent  = t('add');
         if (saveBtn) saveBtn.textContent = t('save');
         renderBackgroundList();
         const overlay = $('lolex-bg-modal-overlay'), modal = $('lolex-bg-modal');
@@ -863,33 +848,28 @@
     }
 
     function saveBackgroundListFromModal() {
-        const body = $('lolex-bg-modal-body');
-        if (!body) return;
+        const body = $('lolex-bg-modal-body'); if (!body) return;
         const urls = Array.from(body.querySelectorAll('.lolex-bg-item')).map(el => el.dataset.url);
         localStorage.setItem(STORAGE.BG_LIST, urls.join('\n'));
         applyCustomBackground(true);
     }
 
     function resetColors() {
-        localStorage.removeItem(STORAGE.PRIMARY_COLOR);
-        localStorage.removeItem(STORAGE.SECONDARY_COLOR);
+        localStorage.removeItem(STORAGE.PRIMARY_COLOR); localStorage.removeItem(STORAGE.SECONDARY_COLOR);
         const pp = $('primary-color-picker'), sp = $('secondary-color-picker');
-        if (pp) pp.value = DEFAULT.PRIMARY;
-        if (sp) sp.value = DEFAULT.SECONDARY;
+        if (pp) pp.value = DEFAULT.PRIMARY; if (sp) sp.value = DEFAULT.SECONDARY;
         applyColorTheme(DEFAULT.PRIMARY, DEFAULT.SECONDARY);
     }
 
     function applyFloatBtnMode(mode) {
-        const btn = $('yt-float-btn');
-        if (!btn) return;
+        const btn = $('yt-float-btn'); if (!btn) return;
         btn.classList.remove('lolex-float-faint', 'lolex-float-hidden');
         if (mode === 'faint') btn.classList.add('lolex-float-faint');
         if (mode === 'hide')  btn.classList.add('lolex-float-hidden');
     }
 
     function toggleYouTubeVisibility() {
-        const card = $('yt-card');
-        if (!card) return;
+        const card = $('yt-card'); if (!card) return;
         const isVisible = card.classList.toggle('yt-card-visible');
         setStoredBool(STORAGE.BAR_VISIBLE, isVisible);
     }
@@ -898,16 +878,12 @@
         const storageKey = `lolex-collapsed-${sectionKey}`;
         if (sectionKey === 'update') localStorage.removeItem(storageKey);
         const isCollapsed = getStoredBool(storageKey, false);
-        const legend = fs.querySelector('legend');
-        if (!legend) return;
-        const leftSpan = document.createElement('span');
-        leftSpan.className = 'legend-left';
+        const legend = fs.querySelector('legend'); if (!legend) return;
+        const leftSpan = document.createElement('span'); leftSpan.className = 'legend-left';
         while (legend.firstChild) leftSpan.appendChild(legend.firstChild);
-        const arrow = document.createElement('span');
-        arrow.className = 'legend-arrow'; arrow.textContent = '▼';
+        const arrow = document.createElement('span'); arrow.className = 'legend-arrow'; arrow.textContent = '▼';
         legend.appendChild(leftSpan); legend.appendChild(arrow);
-        const body = document.createElement('div');
-        body.className = 'lolex-fs-body';
+        const body = document.createElement('div'); body.className = 'lolex-fs-body';
         Array.from(fs.children).filter(e => e.tagName !== 'LEGEND').forEach(e => body.appendChild(e));
         fs.appendChild(body);
         if (isCollapsed) fs.classList.add('lolex-collapsed');
@@ -915,42 +891,29 @@
     }
 
     function makeToggleRow(inputId, labelHtml, checked) {
-        const row = document.createElement('div');
-        row.className = 'lolex-setting-row';
-        const label = document.createElement('label');
-        label.htmlFor = inputId; label.className = 'setting-name'; label.innerHTML = labelHtml;
-        const sw = document.createElement('label');
-        sw.className = 'switch';
-        const input = document.createElement('input');
-        input.type = 'checkbox'; input.id = inputId;
-        if (checked) input.checked = true;
-        const span = document.createElement('span');
-        span.className = 'slider-toggle';
-        sw.appendChild(input); sw.appendChild(span);
-        row.appendChild(label); row.appendChild(sw);
+        const row = document.createElement('div'); row.className = 'lolex-setting-row';
+        const label = document.createElement('label'); label.htmlFor = inputId; label.className = 'setting-name'; label.innerHTML = labelHtml;
+        const sw = document.createElement('label'); sw.className = 'switch';
+        const input = document.createElement('input'); input.type = 'checkbox'; input.id = inputId; if (checked) input.checked = true;
+        const span = document.createElement('span'); span.className = 'slider-toggle';
+        sw.appendChild(input); sw.appendChild(span); row.appendChild(label); row.appendChild(sw);
         return row;
     }
 
     // ------------------------------------------------------------------------------------------------
-    //                                  設定画面 構築
+    //  設定画面 構築
     // ------------------------------------------------------------------------------------------------
-
     function createSettings() {
         const tabContainer = document.querySelector('#settings-screen .pc-tab');
         if (!tabContainer) return;
         addModernStyleSheet();
 
         let tabInput = tabContainer.querySelector('#tab5');
-        if (!tabInput) {
-            tabInput = document.createElement('input');
-            tabInput.id = 'tab5'; tabInput.type = 'radio'; tabInput.name = 'pct';
-            tabContainer.insertBefore(tabInput, tabContainer.querySelector('nav'));
-        }
+        if (!tabInput) { tabInput = document.createElement('input'); tabInput.id = 'tab5'; tabInput.type = 'radio'; tabInput.name = 'pct'; tabContainer.insertBefore(tabInput, tabContainer.querySelector('nav')); }
         let li = tabContainer.querySelector('nav ul li.tab5');
         if (!li) { li = document.createElement('li'); li.className = 'tab5'; tabContainer.querySelector('nav ul').appendChild(li); }
         li.innerHTML = '';
-        const tabLabel = document.createElement('label');
-        tabLabel.htmlFor = 'tab5'; tabLabel.textContent = t('tabTitle');
+        const tabLabel = document.createElement('label'); tabLabel.htmlFor = 'tab5'; tabLabel.textContent = t('tabTitle');
         li.appendChild(tabLabel);
 
         const section = tabContainer.querySelector('section');
@@ -961,7 +924,7 @@
         const container = document.createElement('div');
         container.id = 'lolex-settings'; container.className = 'lolex-settings';
 
-        // ── 0. 最新アップデート ──
+        // ── 0. アップデート ──
         const updateFs = document.createElement('fieldset');
         updateFs.innerHTML = `
             <legend><i class="fas fa-info-circle"></i> ${t('latestUpdates')}</legend>
@@ -973,7 +936,7 @@
         `;
         container.appendChild(updateFs);
 
-        // ── 1. 言語設定 ──
+        // ── 1. 言語 ──
         const langFs = document.createElement('fieldset');
         const currentLang = getLang();
         langFs.innerHTML = `
@@ -1001,14 +964,12 @@
 
         // ── 3. コース別Air Move ──
         const courseFs = document.createElement('fieldset');
-        const courseLegend = document.createElement('legend');
-        courseLegend.innerHTML = `<i class="fas fa-map-signs"></i> ${t('courseSettings')}`;
+        const courseLegend = document.createElement('legend'); courseLegend.innerHTML = `<i class="fas fa-map-signs"></i> ${t('courseSettings')}`;
         courseFs.appendChild(courseLegend);
         COURSES.forEach(({ id, displayName }) => {
             const enabled = getStoredBool(`stopAirMove_${id}`);
             const row = makeToggleRow(`courseAirMoveToggle_${id}`, `<i class="fas fa-bolt"></i>${displayName}`, enabled);
-            row.classList.add('lolex-course-row');
-            row.querySelector('input').dataset.courseId = id;
+            row.classList.add('lolex-course-row'); row.querySelector('input').dataset.courseId = id;
             courseFs.appendChild(row);
         });
         container.appendChild(courseFs);
@@ -1041,246 +1002,95 @@
         `;
         container.appendChild(visualFs);
 
-        // ── 5. YouTube設定 ──
+        // ── 5. YouTube ──
         const ytFs = document.createElement('fieldset');
-        const ytLegend = document.createElement('legend');
-        ytLegend.innerHTML = `<i class="fab fa-youtube"></i> ${t('ytSettings')}`;
+        const ytLegend = document.createElement('legend'); ytLegend.innerHTML = `<i class="fab fa-youtube"></i> ${t('ytSettings')}`;
         ytFs.appendChild(ytLegend);
 
-        // ホットキー
-        const hotkeyRow = document.createElement('div');
-        hotkeyRow.className = 'lolex-setting-row';
-        const hotkeyLabel_el = document.createElement('label');
-        hotkeyLabel_el.className = 'setting-name';
-        hotkeyLabel_el.innerHTML = `<i class="fas fa-keyboard"></i>${t('ytHotkeyLabel')}`;
-        const hotkeyBtn = document.createElement('button');
-        hotkeyBtn.id = 'yt-hotkey-btn'; hotkeyBtn.textContent = hotkeyLabel(); hotkeyBtn.style.cssText = 'min-width:90px;font-size:0.80em;';
+        const hotkeyRow = document.createElement('div'); hotkeyRow.className = 'lolex-setting-row';
+        const hotkeyLabel_el = document.createElement('label'); hotkeyLabel_el.className = 'setting-name'; hotkeyLabel_el.innerHTML = `<i class="fas fa-keyboard"></i>${t('ytHotkeyLabel')}`;
+        const hotkeyBtn = document.createElement('button'); hotkeyBtn.id = 'yt-hotkey-btn'; hotkeyBtn.textContent = hotkeyLabel(); hotkeyBtn.style.cssText = 'min-width:90px;font-size:0.80em;';
         let _waitingHotkey = false;
         on(hotkeyBtn, { click: () => {
-            if (_waitingHotkey) return;
-            _waitingHotkey = true;
-            hotkeyBtn.textContent = t('ytHotkeyHint');
-            hotkeyBtn.style.background = 'var(--secondary-color)';
-            hotkeyBtn.style.color = '#000';
+            if (_waitingHotkey) return; _waitingHotkey = true;
+            hotkeyBtn.textContent = t('ytHotkeyHint'); hotkeyBtn.style.background = 'var(--secondary-color)'; hotkeyBtn.style.color = '#000';
             const onKey = (e) => {
                 if (e.key === 'Escape') { hotkeyBtn.textContent = hotkeyLabel(); hotkeyBtn.style.background = ''; hotkeyBtn.style.color = ''; _waitingHotkey = false; document.removeEventListener('keydown', onKey, { capture: true }); return; }
                 if (['Control','Alt','Shift','Meta'].includes(e.key)) return;
                 e.preventDefault(); e.stopImmediatePropagation();
-                const cfg = { key: e.key, ctrlKey: e.ctrlKey, altKey: e.altKey, shiftKey: e.shiftKey };
-                localStorage.setItem(STORAGE.YT_HOTKEY, JSON.stringify(cfg));
-                applyHotkey();
-                hotkeyBtn.textContent = hotkeyLabel(); hotkeyBtn.style.background = ''; hotkeyBtn.style.color = '';
-                _waitingHotkey = false;
+                localStorage.setItem(STORAGE.YT_HOTKEY, JSON.stringify({ key: e.key, ctrlKey: e.ctrlKey, altKey: e.altKey, shiftKey: e.shiftKey }));
+                applyHotkey(); hotkeyBtn.textContent = hotkeyLabel(); hotkeyBtn.style.background = ''; hotkeyBtn.style.color = ''; _waitingHotkey = false;
                 document.removeEventListener('keydown', onKey, { capture: true });
             };
             document.addEventListener('keydown', onKey, { capture: true });
         }});
-        hotkeyRow.appendChild(hotkeyLabel_el); hotkeyRow.appendChild(hotkeyBtn);
-        ytFs.appendChild(hotkeyRow);
+        hotkeyRow.appendChild(hotkeyLabel_el); hotkeyRow.appendChild(hotkeyBtn); ytFs.appendChild(hotkeyRow);
 
-        // フロートボタン
-        const floatRow = document.createElement('div');
-        floatRow.className = 'lolex-setting-row';
-        const floatLabel = document.createElement('label');
-        floatLabel.className = 'setting-name';
-        floatLabel.innerHTML = `<i class="fas fa-circle"></i>${t('ytFloatBtn')}`;
+        const floatRow = document.createElement('div'); floatRow.className = 'lolex-setting-row';
+        const floatLabel = document.createElement('label'); floatLabel.className = 'setting-name'; floatLabel.innerHTML = `<i class="fas fa-circle"></i>${t('ytFloatBtn')}`;
         const floatModes = ['show','faint','hide'], floatLabels = [t('ytFloatBtnShow'),t('ytFloatBtnFaint'),t('ytFloatBtnHide')];
         const curMode = localStorage.getItem(STORAGE.FLOAT_BTN) || 'show';
-        const floatGroup = document.createElement('div');
-        floatGroup.style.cssText = 'display:flex;gap:4px;';
+        const floatGroup = document.createElement('div'); floatGroup.style.cssText = 'display:flex;gap:4px;';
         floatModes.forEach((mode, i) => {
-            const btn = document.createElement('button');
-            btn.textContent = floatLabels[i]; btn.style.cssText = 'font-size:0.78em;padding:2px 8px;';
+            const btn = document.createElement('button'); btn.textContent = floatLabels[i]; btn.style.cssText = 'font-size:0.78em;padding:2px 8px;';
             if (mode === curMode) btn.style.fontWeight = '700';
-            on(btn, { click: () => {
-                localStorage.setItem(STORAGE.FLOAT_BTN, mode);
-                applyFloatBtnMode(mode);
-                floatGroup.querySelectorAll('button').forEach((b, j) => { b.style.fontWeight = j === i ? '700' : '400'; });
-            }});
+            on(btn, { click: () => { localStorage.setItem(STORAGE.FLOAT_BTN, mode); applyFloatBtnMode(mode); floatGroup.querySelectorAll('button').forEach((b, j) => { b.style.fontWeight = j === i ? '700' : '400'; }); }});
             floatGroup.appendChild(btn);
         });
-        floatRow.appendChild(floatLabel); floatRow.appendChild(floatGroup);
-        ytFs.appendChild(floatRow);
+        floatRow.appendChild(floatLabel); floatRow.appendChild(floatGroup); ytFs.appendChild(floatRow);
 
-        const loopRow    = makeToggleRow('ytLoopToggle',    `<i class="fas fa-sync-alt"></i>${t('loop')}`,    getStoredBool(STORAGE.LOOP));
-        const shuffleRow = makeToggleRow('ytShuffleToggle', `<i class="fas fa-random"></i>${t('shuffle')}`,   getStoredBool(STORAGE.SHUFFLE));
-        ytFs.appendChild(loopRow); ytFs.appendChild(shuffleRow);
-        const ytNote = document.createElement('div');
-        ytNote.className = 'lolex-note'; ytNote.textContent = t('ytNote');
-        ytFs.appendChild(ytNote);
+        ytFs.appendChild(makeToggleRow('ytLoopToggle',    `<i class="fas fa-sync-alt"></i>${t('loop')}`,    getStoredBool(STORAGE.LOOP)));
+        ytFs.appendChild(makeToggleRow('ytShuffleToggle', `<i class="fas fa-random"></i>${t('shuffle')}`,   getStoredBool(STORAGE.SHUFFLE)));
+        const ytNote = document.createElement('div'); ytNote.className = 'lolex-note'; ytNote.textContent = t('ytNote'); ytFs.appendChild(ytNote);
         container.appendChild(ytFs);
 
-        // ── 6. Firebase同期 ──
-        const fbFs = document.createElement('fieldset');
-        const fbLegend = document.createElement('legend');
-        fbLegend.innerHTML = `<i class="fas fa-cloud"></i> ${t('fbSync')}`;
-        fbFs.appendChild(fbLegend);
+        // ── 6. ベストタイム計算 ──
+        const btFs = document.createElement('fieldset');
+        const btLegend = document.createElement('legend'); btLegend.innerHTML = `<i class="fas fa-stopwatch"></i> ${t('bestTimes')}`;
+        btFs.appendChild(btLegend);
 
-        // ステータス表示
-        const fbStatus = document.createElement('div');
-        fbStatus.className = 'lolex-fb-status'; fbStatus.id = 'lolex-fb-status';
-        fbStatus.textContent = fbAuth?.currentUser ? t('fbLoggedIn') + (fbAuth.currentUser.displayName || fbAuth.currentUser.email) : t('fbLoginRequired');
-        fbFs.appendChild(fbStatus);
+        const totalDisplay = document.createElement('div');
+        totalDisplay.id = 'lb-total-display'; totalDisplay.className = 'lb-total-display';
+        btFs.appendChild(totalDisplay);
 
-        // ログインフォーム（未ログイン時）
-        const fbLoginDiv = document.createElement('div');
-        fbLoginDiv.id = 'lolex-fb-login-div';
-        fbLoginDiv.style.display = fbAuth?.currentUser ? 'none' : '';
+        const btBtnGroup = document.createElement('div'); btBtnGroup.className = 'lolex-btn-group';
+        const calcBtn = document.createElement('button'); calcBtn.id = 'lb-calc-btn'; calcBtn.className = 'accent'; calcBtn.textContent = t('bestTimesCalc');
+        const saveBtn = document.createElement('button'); saveBtn.id = 'lb-save-btn'; saveBtn.textContent = t('bestTimesSave');
+        btBtnGroup.appendChild(calcBtn); btBtnGroup.appendChild(saveBtn);
+        btFs.appendChild(btBtnGroup);
 
-        const emailRow = document.createElement('div');
-        emailRow.className = 'lolex-setting-row';
-        const emailLabel = document.createElement('label');
-        emailLabel.className = 'setting-name'; emailLabel.innerHTML = `<i class="fas fa-envelope"></i>${t('fbEmail')}`;
-        const emailInput = document.createElement('input');
-        emailInput.type = 'email'; emailInput.id = 'lolex-fb-email';
-        emailInput.value = localStorage.getItem(STORAGE.FB_EMAIL) || '';
-        emailInput.style.cssText = 'width:160px;';
-        emailRow.appendChild(emailLabel); emailRow.appendChild(emailInput);
+        const btNote = document.createElement('div'); btNote.className = 'lolex-note'; btNote.textContent = t('bestTimesNote');
+        btFs.appendChild(btNote);
+        container.appendChild(btFs);
 
-        const passRow = document.createElement('div');
-        passRow.className = 'lolex-setting-row';
-        const passLabel = document.createElement('label');
-        passLabel.className = 'setting-name'; passLabel.innerHTML = `<i class="fas fa-lock"></i>${t('fbPassword')}`;
-        const passInput = document.createElement('input');
-        passInput.type = 'password'; passInput.id = 'lolex-fb-password';
-        passInput.style.cssText = 'width:160px;';
-        passRow.appendChild(passLabel); passRow.appendChild(passInput);
-
-        const loginBtnRow = document.createElement('div');
-        loginBtnRow.className = 'lolex-btn-group';
-        const loginBtn = document.createElement('button');
-        loginBtn.textContent = t('fbLogin'); loginBtn.className = 'accent';
-        on(loginBtn, { click: async () => {
-            const email = $('lolex-fb-email')?.value.trim();
-            const pass  = $('lolex-fb-password')?.value;
-            if (!email || !pass) return;
-            try {
-                localStorage.setItem(STORAGE.FB_EMAIL, email);
-                await fbAuth.signInWithEmailAndPassword(email, pass);
-                updateFbUI();
-            } catch(e) {
-                $('lolex-fb-result').textContent = t('fbError') + e.message;
-            }
-        }});
-        loginBtnRow.appendChild(loginBtn);
-
-        fbLoginDiv.appendChild(emailRow);
-        fbLoginDiv.appendChild(passRow);
-        fbLoginDiv.appendChild(loginBtnRow);
-        fbFs.appendChild(fbLoginDiv);
-
-        // アップロード/ダウンロード/ログアウトボタン
-        const fbLoggedInDiv = document.createElement('div');
-        fbLoggedInDiv.id = 'lolex-fb-loggedin-div';
-        fbLoggedInDiv.style.display = fbAuth?.currentUser ? '' : 'none';
-
-        const fbBtnGroup = document.createElement('div');
-        fbBtnGroup.className = 'lolex-btn-group';
-
-        const uploadBtn = document.createElement('button');
-        uploadBtn.textContent = t('fbUpload'); uploadBtn.className = 'accent';
-        on(uploadBtn, { click: async () => {
-            const resultEl = $('lolex-fb-result');
-            if (resultEl) resultEl.textContent = t('fbUploading');
-            try {
-                const count = await fbUpload();
-                if (resultEl) resultEl.textContent = t('fbUploadDone') + ` (${count}項目)`;
-            } catch(e) {
-                if (resultEl) resultEl.textContent = t('fbError') + e.message;
-            }
-        }});
-
-        const downloadBtn = document.createElement('button');
-        downloadBtn.textContent = t('fbDownload');
-        on(downloadBtn, { click: async () => {
-            const resultEl = $('lolex-fb-result');
-            if (resultEl) resultEl.textContent = t('fbDownloading');
-            try {
-                const count = await fbDownload();
-                if (count === null) { if (resultEl) resultEl.textContent = t('fbNoData'); return; }
-                if (resultEl) resultEl.textContent = t('fbDownloadDone') + ` (${count}項目)`;
-            } catch(e) {
-                if (resultEl) resultEl.textContent = t('fbError') + e.message;
-            }
-        }});
-
-        const logoutBtn = document.createElement('button');
-        logoutBtn.textContent = t('fbLogout'); logoutBtn.className = 'muted';
-        on(logoutBtn, { click: async () => {
-            await fbAuth.signOut();
-            updateFbUI();
-        }});
-
-        fbBtnGroup.appendChild(uploadBtn);
-        fbBtnGroup.appendChild(downloadBtn);
-        fbBtnGroup.appendChild(logoutBtn);
-        fbLoggedInDiv.appendChild(fbBtnGroup);
-        fbFs.appendChild(fbLoggedInDiv);
-
-        // 結果表示
-        const fbResult = document.createElement('div');
-        fbResult.className = 'lolex-fb-result'; fbResult.id = 'lolex-fb-result';
-        fbFs.appendChild(fbResult);
-
-        // 注意書き
-        const fbNote = document.createElement('div');
-        fbNote.className = 'lolex-note'; fbNote.textContent = t('fbNote');
-        fbFs.appendChild(fbNote);
-
-        container.appendChild(fbFs);
-
-        // コラプシブル設定
-        [[updateFs,'update'],[langFs,'lang'],[gameFs,'airmove'],[courseFs,'course'],[visualFs,'visual'],[ytFs,'yt'],[fbFs,'fb']].forEach(([fs, key]) => makeCollapsibleFieldset(fs, key));
+        [[updateFs,'update'],[langFs,'lang'],[gameFs,'airmove'],[courseFs,'course'],[visualFs,'visual'],[ytFs,'yt'],[btFs,'besttimes']].forEach(([fs, key]) => makeCollapsibleFieldset(fs, key));
 
         panel.appendChild(container);
         bindSettingsEvents();
-
-        // Firebase認証状態監視
-        if (fbAuth) {
-            fbAuth.onAuthStateChanged(() => updateFbUI());
-        }
-    }
-
-    function updateFbUI() {
-        const user = fbAuth?.currentUser;
-        const statusEl    = $('lolex-fb-status');
-        const loginDiv    = $('lolex-fb-login-div');
-        const loggedInDiv = $('lolex-fb-loggedin-div');
-        if (statusEl)    statusEl.textContent = user ? t('fbLoggedIn') + (user.displayName || user.email) : t('fbLoginRequired');
-        if (loginDiv)    loginDiv.style.display    = user ? 'none' : '';
-        if (loggedInDiv) loggedInDiv.style.display = user ? '' : 'none';
-        const resultEl = $('lolex-fb-result');
-        if (resultEl) resultEl.textContent = '';
     }
 
     function bindSettingsEvents() {
-        $('language-switcher')?.addEventListener('change', (e) => {
-            localStorage.setItem(STORAGE.LANGUAGE, e.target.value);
-            invalidateLangCache();
-            createSettings();
-        });
+        $('language-switcher')?.addEventListener('change', (e) => { localStorage.setItem(STORAGE.LANGUAGE, e.target.value); invalidateLangCache(); createSettings(); updateProfileUILang(); });
         $('airMoveAutoSwitchToggle')?.addEventListener('change', (e) => { setStoredBool(STORAGE.AIR_MOVE_AUTO, e.target.checked); });
         COURSES.forEach(({ id }) => {
             const cb = document.getElementById(`courseAirMoveToggle_${id}`);
-            if (cb && !cb.dataset.lolexBound) {
-                cb.addEventListener('change', (e) => { setStoredBool(`stopAirMove_${id}`, e.target.checked); updateCourseLabels(id); });
-                cb.dataset.lolexBound = 'true';
-            }
+            if (cb && !cb.dataset.lolexBound) { cb.addEventListener('change', (e) => { setStoredBool(`stopAirMove_${id}`, e.target.checked); updateCourseLabels(id); }); cb.dataset.lolexBound = 'true'; }
         });
         $('lolex-bg-edit-list-button')?.addEventListener('click', showBackgroundModal);
-        $('background-reset-to-default-button')?.addEventListener('click', () => {
-            if (!confirm(t('resetListConfirm'))) return;
-            localStorage.setItem(STORAGE.BG_LIST, DEFAULT.BG_URLS.join('\n'));
-            applyCustomBackground(true);
-        });
+        $('background-reset-to-default-button')?.addEventListener('click', () => { if (!confirm(t('resetListConfirm'))) return; localStorage.setItem(STORAGE.BG_LIST, DEFAULT.BG_URLS.join('\n')); applyCustomBackground(true); });
         $('background-shuffle-button')?.addEventListener('click', () => { applyCustomBackground(true); });
         $('primary-color-picker')?.addEventListener('input', (e) => { localStorage.setItem(STORAGE.PRIMARY_COLOR, e.target.value); applyColorTheme(e.target.value, getSecondaryColor()); updateCourseLabels(); });
         $('secondary-color-picker')?.addEventListener('input', (e) => { localStorage.setItem(STORAGE.SECONDARY_COLOR, e.target.value); applyColorTheme(getPrimaryColor(), e.target.value); updateCourseLabels(); });
         $('color-reset-button')?.addEventListener('click', resetColors);
         $('ytLoopToggle')?.addEventListener('change', (e) => { setStoredBool(STORAGE.LOOP, e.target.checked); try { if (player) player.setLoop(e.target.checked); } catch (_) {} });
         $('ytShuffleToggle')?.addEventListener('change', (e) => { setStoredBool(STORAGE.SHUFFLE, e.target.checked); });
+        $('lb-calc-btn')?.addEventListener('click', fetchBestTimes);
+        $('lb-save-btn')?.addEventListener('click', saveTimesAsImage);
     }
 
+    // ------------------------------------------------------------------------------------------------
+    //  console.log フック / マップロード処理
+    // ------------------------------------------------------------------------------------------------
     function hookConsoleLog() {
         const originalLog = unsafeWindow.console.log;
         if (originalLog._lolexHooked) return;
@@ -1296,7 +1106,7 @@
     function handleMapLoad(mapName) {
         if (getStoredBool(STORAGE.AIR_MOVE_AUTO)) {
             const course = COURSES.find(c => mapName.toLowerCase().includes(c.keyword.toLowerCase()));
-            const id     = course ? course.id : mapName.toLowerCase().replace(/\s+/g, '-');
+            const id = course ? course.id : mapName.toLowerCase().replace(/\s+/g, '-');
             clickAirMoveRadio(getStoredBool(`stopAirMove_${id}`));
         }
         const course = COURSES.find(c => mapName.toLowerCase().includes(c.keyword.toLowerCase()));
@@ -1338,8 +1148,7 @@
         _hotkeyHandler = (e) => {
             const match = e.key.toLowerCase() === cfg.key.toLowerCase() && !!e.ctrlKey === !!cfg.ctrlKey && !!e.altKey === !!cfg.altKey && !!e.shiftKey === !!cfg.shiftKey;
             if (!match) return;
-            e.preventDefault(); e.stopImmediatePropagation();
-            toggleYouTubeVisibility();
+            e.preventDefault(); e.stopImmediatePropagation(); toggleYouTubeVisibility();
         };
         document.addEventListener('keydown', _hotkeyHandler, { capture: true });
         window.addEventListener('keydown',   _hotkeyHandler, { capture: true });
@@ -1352,36 +1161,143 @@
         return [...mods, cfg.key.toUpperCase()].join('+') || t('ytHotkeyNone');
     }
 
+    // ------------------------------------------------------------------------------------------------
+    //  初期化
+    // ------------------------------------------------------------------------------------------------
     function init() {
         if (!document.querySelector('#settings-screen .pc-tab')) return;
         if (initCompleted) { if (document.getElementById('lolex-settings')) bindSettingsEvents(); return; }
         initCompleted = true;
-
         document.getElementById('yt-card')?.remove();
         document.getElementById('yt-hidden-player')?.remove();
         document.getElementById('yt-url-panel')?.remove();
-
         applyColorTheme(getPrimaryColor(), getSecondaryColor());
         applyCustomBackground(false);
         hookConsoleLog();
         setupHotkey();
-        initFirebase();
         createSettings();
         createBackgroundModal();
-
         setTimeout(() => { initYouTubePlayerUI(); }, 1000);
-
         window.addEventListener('beforeunload', saveTime);
         document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveTime(); });
     }
 
+    // ------------------------------------------------------------------------------------------------
+    //  プロフィール画面 ベストタイムUI (profile-panel への直接挿入)
+    // ------------------------------------------------------------------------------------------------
+    function insertProfileUI() {
+        const panel = document.getElementById('profile-panel');
+        if (!panel || document.getElementById('lb-profile-calc-btn')) return;
+
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:6px;justify-content:center;margin:8px 0 4px;';
+
+        const calcBtn = document.createElement('button');
+        calcBtn.id = 'lb-profile-calc-btn';
+        calcBtn.textContent = t('bestTimesCalc');
+        calcBtn.style.cssText = 'padding:5px 12px;font-weight:700;font-size:12px;border:none;border-radius:6px;cursor:pointer;background:linear-gradient(135deg,#f97316,#fb923c);color:#fff;white-space:nowrap;';
+
+        const saveBtn = document.createElement('button');
+        saveBtn.id = 'lb-profile-save-btn';
+        saveBtn.textContent = t('bestTimesSave');
+        saveBtn.style.cssText = 'padding:5px 12px;font-weight:700;font-size:12px;border:none;border-radius:6px;cursor:pointer;background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;white-space:nowrap;';
+
+        btnRow.appendChild(calcBtn);
+        btnRow.appendChild(saveBtn);
+
+        const totalEl = document.createElement('div');
+        totalEl.id = 'lb-profile-total';
+        totalEl.style.cssText = 'text-align:center;font-size:13px;font-weight:bold;color:#4ade80;margin:2px 0 6px;min-height:18px;';
+
+        const wrapper = document.getElementById('best-times-wrapper');
+        if (wrapper) {
+            panel.insertBefore(totalEl,  wrapper);
+            panel.insertBefore(btnRow,   totalEl);
+        } else {
+            panel.appendChild(btnRow);
+            panel.appendChild(totalEl);
+        }
+
+        calcBtn.addEventListener('click', () => {
+            const sessionId = getSessionId();
+            if (!sessionId) { totalEl.style.color = '#f87171'; totalEl.textContent = t('bestTimesNoSession'); return; }
+            calcBtn.disabled = true; calcBtn.textContent = t('bestTimesLoading');
+            totalEl.style.color = '#94a3b8'; totalEl.textContent = t('bestTimesLoading');
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: `https://s.lolbeans.io/my-stats?s=${encodeURIComponent(sessionId)}`,
+                onload: (res) => {
+                    calcBtn.disabled = false; calcBtn.textContent = t('bestTimesCalc');
+                    if (res.status !== 200) { totalEl.style.color = '#f87171'; totalEl.textContent = `${t('bestTimesError')} HTTP ${res.status}`; return; }
+                    let json; try { json = JSON.parse(res.responseText); } catch { totalEl.style.color = '#f87171'; totalEl.textContent = t('bestTimesError'); return; }
+                    if (!json.records || !Array.isArray(json.records)) { totalEl.style.color = '#f87171'; totalEl.textContent = t('bestTimesError'); return; }
+                    const best  = getBestTimes(json.records);
+                    const total = Object.values(best).reduce((s, d) => s + d.time, 0);
+                    totalEl.style.color = '#4ade80';
+                    totalEl.textContent = `${t('bestTimesTotal')}: ${total.toFixed(3)}s（${Object.keys(best).length} maps）`;
+                },
+                onerror: () => { calcBtn.disabled = false; calcBtn.textContent = t('bestTimesCalc'); totalEl.style.color = '#f87171'; totalEl.textContent = t('bestTimesError'); },
+            });
+        });
+
+        saveBtn.addEventListener('click', () => {
+            saveBtn.disabled = true; saveBtn.textContent = t('bestTimesSaving');
+            // collectThumbnails / saveTimesAsImage を流用（lb-total-display の代わりに lb-profile-total を参照）
+            (async () => {
+                const thumbs = collectThumbnails();
+                const COLS=4,CARD_W=200,CARD_H=130,THUMB_H=90,PAD=12,HEADER_H=60,FOOTER_H=50;
+                const ROWS=Math.ceil(thumbs.length/COLS);
+                const W=COLS*CARD_W+(COLS+1)*PAD, H=HEADER_H+ROWS*(CARD_H+PAD)+PAD+FOOTER_H;
+                const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
+                const ctx=canvas.getContext('2d');
+                ctx.fillStyle='#1e293b'; ctx.fillRect(0,0,W,H);
+                ctx.fillStyle='#f97316'; ctx.fillRect(0,0,W,HEADER_H);
+                ctx.fillStyle='#fff'; ctx.font='bold 22px sans-serif'; ctx.textAlign='center';
+                ctx.fillText('🏆 LolBeans Best Times',W/2,38);
+                const totalText = totalEl.textContent || '';
+                ctx.fillStyle='#0f172a'; ctx.fillRect(0,H-FOOTER_H,W,FOOTER_H);
+                ctx.fillStyle='#4ade80'; ctx.font='bold 18px sans-serif'; ctx.textAlign='center';
+                ctx.fillText(totalText||'---',W/2,H-16);
+                const images=await Promise.all(thumbs.map(th=>th.imgSrc?loadImage(th.imgSrc):Promise.resolve(null)));
+                thumbs.forEach((thumb,i)=>{
+                    const col=i%COLS,row=Math.floor(i/COLS);
+                    const x=PAD+col*(CARD_W+PAD),y=HEADER_H+PAD+row*(CARD_H+PAD);
+                    ctx.fillStyle='#334155'; roundRect(ctx,x,y,CARD_W,CARD_H,8); ctx.fill();
+                    const img=images[i];
+                    if(img){ctx.save();roundRect(ctx,x,y,CARD_W,THUMB_H,8);ctx.clip();const scale=Math.max(CARD_W/img.width,THUMB_H/img.height);ctx.drawImage(img,x+(CARD_W-img.width*scale)/2,y+(THUMB_H-img.height*scale)/2,img.width*scale,img.height*scale);ctx.restore();}
+                    else{ctx.fillStyle='#475569';ctx.fillRect(x,y,CARD_W,THUMB_H);}
+                    ctx.fillStyle='rgba(15,23,42,0.85)';ctx.fillRect(x,y+THUMB_H,CARD_W,CARD_H-THUMB_H);
+                    ctx.fillStyle='#e2e8f0';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText(thumb.name,x+CARD_W/2,y+THUMB_H+16,CARD_W-8);
+                    ctx.fillStyle='#fbbf24';ctx.font='13px monospace';ctx.fillText(thumb.time,x+CARD_W/2,y+THUMB_H+34,CARD_W-8);
+                });
+                const link=document.createElement('a'); link.download='lolbeans-best-times.png'; link.href=canvas.toDataURL('image/png'); link.click();
+                saveBtn.disabled=false; saveBtn.textContent=t('bestTimesSave');
+            })();
+        });
+    }
+
+    function updateProfileUILang() {
+        const cb = document.getElementById('lb-profile-calc-btn');
+        const sb = document.getElementById('lb-profile-save-btn');
+        if (cb) cb.textContent = t('bestTimesCalc');
+        if (sb) sb.textContent = t('bestTimesSave');
+    }
+
+        function tryInsertProfileUI() {
+        if (document.getElementById('profile-panel')) { insertProfileUI(); return; }
+        const obs = new MutationObserver(() => {
+            if (document.getElementById('profile-panel')) { obs.disconnect(); insertProfileUI(); }
+        });
+        obs.observe(document.body, { childList: true, subtree: true });
+    }
+
     function initializeScript() {
-        if (document.body) init();
+        if (document.body) { init(); tryInsertProfileUI(); }
         const observer = new MutationObserver(() => {
             if (document.querySelector('#settings-screen .pc-tab')) { observer.disconnect(); init(); }
         });
         if (document.body) observer.observe(document.body, { childList: true, subtree: true });
-        else document.addEventListener('DOMContentLoaded', () => { observer.observe(document.body, { childList: true, subtree: true }); init(); });
+        else document.addEventListener('DOMContentLoaded', () => { observer.observe(document.body, { childList: true, subtree: true }); init(); tryInsertProfileUI(); });
     }
 
     initializeScript();
